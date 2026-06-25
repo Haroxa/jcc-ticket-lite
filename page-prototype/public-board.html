@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JCC 公开存票榜</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body class="public-page">
+  <main class="public-shell">
+    <header class="public-hero">
+      <div>
+        <h1>公开存票榜</h1>
+        <p>仅展示当前存票大于 0 且允许公开的存票人，不显示流水、备注和操作信息。</p>
+      </div>
+      <div class="public-summary">
+        <span>上榜人数</span>
+        <strong id="publicTotalPeople">0</strong>
+      </div>
+    </header>
+
+    <section class="panel public-board">
+      <div class="panel-header">
+        <div>
+          <h2>余额排行榜</h2>
+          <span id="publicBoardUpdated">按当前有效余额排序</span>
+        </div>
+      </div>
+      <div class="public-rank-list" id="publicRankList"></div>
+      <p class="public-note">说明：公开榜单只用于查看可公开余额，实际数据以后台有效流水为准。</p>
+    </section>
+  </main>
+  <script src="./public-board.js"></script>
+</body>
+</html>

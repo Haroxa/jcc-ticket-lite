@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "jcc-ticket-lite",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2026-06-25",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "jcc_ticket_lite",
+      "database_id": "2c34d561-227c-4dbb-97e2-b7e0fe9404e0"
+    }
+  ],
+  "vars": {
+    "APP_NAME": "JCC 存票管理"
+  }
+}

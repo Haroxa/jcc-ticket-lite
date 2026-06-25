@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JCC 存票管理原型</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <section class="login-screen" id="loginScreen">
+    <form class="login-card" id="loginForm">
+      <div>
+        <h1>JCC 存票管理</h1>
+        <p>登录后可在多设备共享查看和维护存票数据。</p>
+      </div>
+      <label>用户名<input id="loginUsername" value="admin" autocomplete="username"></label>
+      <label>密码<input id="loginPassword" value="123456" type="password" autocomplete="current-password"></label>
+      <button class="primary-button" type="submit">登录</button>
+      <a class="secondary-button text-link-button" href="./public-board.html">打开公开存票榜</a>
+      <p class="muted">原型账号：admin / 123456</p>
+    </form>
+  </section>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-block">
+        <h1>JCC 存票管理</h1>
+        <p>云端共享版 · 永久流水存储</p>
+      </div>
+      <div class="account-strip">
+        <label class="role-switch">角色
+          <select id="roleSwitch">
+            <option value="admin">管理员</option>
+            <option value="operator">操作员</option>
+            <option value="viewer">只读成员</option>
+          </select>
+        </label>
+        <span class="role-badge" id="currentRoleBadge">管理员</span>
+        <span id="currentUserName">阿晚</span>
+        <button class="ghost-button" id="logoutButton" type="button">退出</button>
+      </div>
+    </header>
+
+    <aside class="side-nav" aria-label="主导航">
+      <div class="nav-section-label">日常操作</div>
+      <button class="nav-button active" data-page="dashboard" type="button"><span class="nav-icon">⌂</span><span>工作台</span></button>
+      <button class="nav-button" data-page="entry" data-requires="write" type="button"><span class="nav-icon">＋</span><span>快速录入</span></button>
+      <button class="nav-button" data-page="people" type="button"><span class="nav-icon">◎</span><span>存票人</span></button>
+      <button class="nav-button" data-page="records" type="button"><span class="nav-icon">≡</span><span>存取记录</span></button>
+      <button class="nav-button" data-page="history" type="button"><span class="nav-icon">◷</span><span>个人历史</span></button>
+      <div class="nav-section-label">数据与系统</div>
+      <button class="nav-button" data-page="importExport" data-requires="admin" type="button"><span class="nav-icon">⇅</span><span>数据维护</span></button>
+      <button class="nav-button" data-page="settings" type="button"><span class="nav-icon">ⓘ</span><span>系统信息</span></button>
+      <div class="side-status">
+        <span>当前模式</span>
+        <strong>Cloudflare 共享版</strong>
+        <small id="sideRoleStatus">管理员 · D1 永久保存流水</small>
+      </div>
+    </aside>
+
+    <nav class="tablet-nav" aria-label="平板导航">
+      <button class="nav-button active" data-page="dashboard" type="button"><span class="nav-icon">⌂</span>工作台</button>
+      <button class="nav-button" data-page="entry" data-requires="write" type="button"><span class="nav-icon">＋</span>快速录入</button>
+      <button class="nav-button" data-page="people" type="button"><span class="nav-icon">◎</span>存票人</button>
+      <button class="nav-button" data-page="records" type="button"><span class="nav-icon">≡</span>存取记录</button>
+      <button class="nav-button" data-page="history" type="button"><span class="nav-icon">◷</span>个人历史</button>
+      <button class="nav-button" data-page="more" type="button"><span class="nav-icon">⋯</span>更多</button>
+    </nav>
+
+    <main class="main-content">
+      <section class="page active" id="dashboard">
+        <div class="page-heading">
+          <div>
+            <h2>工作台</h2>
+            <p>查看今日存取、总余额和最近流水，点击统计卡可进入对应记录。</p>
+          </div>
+          <button class="primary-button" data-page-jump="entry" data-requires="write" type="button">新增记录</button>
+        </div>
+
+        <div class="metrics-grid">
+          <button class="metric-card metric-button" data-dashboard-filter="all" type="button"><span>当前总存票</span><strong id="metricBalance">0</strong></button>
+          <article class="metric-card"><span>存票人数</span><strong>6</strong></article>
+          <button class="metric-card metric-button" data-dashboard-filter="depositToday" type="button"><span>今日存入</span><strong>460</strong></button>
+          <button class="metric-card metric-button" data-dashboard-filter="withdrawToday" type="button"><span>今日取用</span><strong>120</strong></button>
+        </div>
+
+        <div class="two-column">
+          <section class="panel">
+            <div class="panel-header">
+              <h3>余额排行</h3>
+              <span>点击查看历史</span>
+            </div>
+            <div class="rank-list" id="rankList"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <h3>最近记录</h3>
+              <span>最新 5 条</span>
+            </div>
+            <div class="record-list" id="recentRecords"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="page" id="entry">
+        <div class="page-heading">
+          <div>
+            <h2>快速录入</h2>
+            <p>选择存票人，录入存入或取用票数；取用不能超过当前余额。</p>
+          </div>
+        </div>
+
+        <div class="entry-layout">
+          <form class="panel form-panel" id="entryForm">
+            <label>时间<input id="entryDate" type="datetime-local"></label>
+            <div class="person-picker">
+              <label>存票人搜索<input id="entryPersonSearch" placeholder="搜索姓名，点击下方结果选择"></label>
+              <input id="entryPerson" type="hidden">
+              <div class="person-picker-list" id="entryPersonResults"></div>
+            </div>
+            <div>
+              <span class="field-label">类型</span>
+              <div class="segmented">
+                <button class="segment active" data-type="deposit" type="button">存入</button>
+                <button class="segment" data-type="withdraw" type="button">取用</button>
+              </div>
+            </div>
+            <label>票数<input id="entryAmount" inputmode="numeric" placeholder="请输入正整数"></label>
+            <div class="balance-preview" id="balancePreview">选择存票人并输入票数后显示余额变化</div>
+            <label>备注<textarea id="entryNote" rows="3" placeholder="来源或原因"></textarea></label>
+            <div class="button-row">
+              <button class="primary-button" type="submit">保存记录</button>
+              <button class="secondary-button" id="clearEntry" type="button">清空</button>
+              <button class="secondary-button" id="toggleCalculator" type="button">展开计算工具</button>
+            </div>
+            <p class="notice" id="entryNotice"></p>
+          </form>
+
+          <aside class="panel person-side">
+            <div class="panel-header">
+              <h3 id="selectedPersonName">张三</h3>
+              <span>当前存票人</span>
+            </div>
+            <div class="balance-display" id="selectedBalance">0</div>
+            <p class="muted">最近记录</p>
+            <div class="record-list compact" id="personRecent"></div>
+          </aside>
+        </div>
+
+        <section class="panel calculator-inline is-collapsed" id="calculatorInline">
+          <div class="panel-header">
+            <div>
+              <h3>计算工具</h3>
+              <span>计算工具只辅助填票数，保存后才会生成流水。</span>
+            </div>
+          </div>
+          <div class="two-column compact-two-column">
+            <div>
+              <label>本次数量</label>
+              <div class="qty-editor">
+                <button class="secondary-button" data-calc-qty-step="-1" type="button">-</button>
+                <input id="calcQty" inputmode="numeric" min="1" type="number" value="1">
+                <button class="secondary-button" data-calc-qty-step="1" type="button">+</button>
+              </div>
+              <div class="quick-qty-row" aria-label="快捷数量">
+                <button type="button" data-calc-qty-preset="1">1</button>
+                <button type="button" data-calc-qty-preset="2">2</button>
+                <button type="button" data-calc-qty-preset="3">3</button>
+                <button type="button" data-calc-qty-preset="5">5</button>
+                <button type="button" data-calc-qty-preset="10">10</button>
+              </div>
+              <label>自定义价格<input id="customPrice" inputmode="numeric" placeholder="例如 188"></label>
+              <div class="button-row custom-price-actions">
+                <button class="secondary-button" id="addCustomPrice" type="button">+ 自定义</button>
+                <button class="secondary-button" id="subCustomPrice" type="button">- 自定义</button>
+              </div>
+              <div class="price-grid" id="priceGrid"></div>
+            </div>
+            <div>
+              <div class="calc-chain" id="calcChain"></div>
+              <div class="result-row"><span>原始总数</span><strong id="rawTotal">0</strong></div>
+              <div class="result-row"><span>向下抹零</span><strong id="floorTotal">0</strong></div>
+              <div class="result-row"><span>向上取整</span><strong id="ceilTotal">0</strong></div>
+              <div class="button-row result-actions">
+                <button class="primary-button" id="applyRawCalc" type="button">应用原始</button>
+                <button class="primary-button" id="applyFloorCalc" type="button">应用抹零</button>
+                <button class="primary-button" id="applyCeilCalc" type="button">应用取整</button>
+                <button class="secondary-button" id="clearCalc" type="button">清空</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="page" id="people">
+        <div class="page-heading">
+          <div>
+            <h2>存票人</h2>
+            <p>内部管理页显示全部存票人；停用和拉黑不会进入录入候选和公开榜单。</p>
+          </div>
+          <button class="primary-button" id="addPerson" data-requires="admin" type="button">新增存票人</button>
+        </div>
+        <section class="panel">
+          <div class="filter-panel">
+            <label>关键词<input id="personSearch" placeholder="搜索姓名或备注"></label>
+            <label>状态<select id="personStatus"><option value="">全部状态</option><option value="正常">正常</option><option value="停用">停用</option><option value="拉黑">拉黑</option></select></label>
+            <div class="filter-actions">
+              <button class="primary-button" id="personQuery" type="button">查询</button>
+              <button class="secondary-button" id="personReset" type="button">重置</button>
+            </div>
+          </div>
+          <p class="filter-summary" id="peopleSummary"></p>
+          <div class="responsive-table people-table" id="peopleTable"></div>
+          <div class="pagination-bar" id="peoplePager"></div>
+        </section>
+      </section>
+
+      <section class="page" id="records">
+        <div class="page-heading">
+          <div>
+            <h2>存取记录</h2>
+            <p>查看所有存入、取用和作废记录；作废不计入余额，但不会删除。</p>
+          </div>
+          <button class="secondary-button" data-requires="export" type="button">导出当前结果</button>
+        </div>
+        <section class="panel">
+          <div class="filter-panel">
+            <label>关键词<input id="recordSearch" placeholder="搜索存票人或备注"></label>
+            <label>类型<select id="recordType"><option value="">全部类型</option><option value="deposit">存入</option><option value="withdraw">取用</option></select></label>
+            <label>状态<select id="recordStatus"><option value="">全部状态</option><option value="normal">正常</option><option value="voided">作废</option></select></label>
+            <label>开始日期<input id="recordStartDate" type="date"></label>
+            <label>结束日期<input id="recordEndDate" type="date"></label>
+            <div class="filter-actions">
+              <button class="primary-button" id="recordQuery" type="button">查询</button>
+              <button class="secondary-button" id="recordReset" type="button">重置</button>
+            </div>
+          </div>
+          <p class="helper-note">提示：作废需要填写原因，恢复后该记录会重新参与余额计算。</p>
+          <p class="filter-summary" id="recordsSummary"></p>
+          <div class="responsive-table records-table" id="recordsTable"></div>
+          <div class="pagination-bar" id="recordsPager"></div>
+        </section>
+      </section>
+
+      <section class="page" id="history">
+        <div class="page-heading">
+          <div>
+            <h2>个人历史</h2>
+            <p>按存票人查看完整流水，操作后余额用于核对每一步变化。</p>
+          </div>
+          <button class="secondary-button" data-requires="export" type="button">导出此人记录</button>
+        </div>
+        <section class="panel">
+          <div class="filter-panel">
+            <div class="person-picker">
+              <label>存票人搜索<input id="historyPersonSearch" placeholder="搜索姓名，点击下方结果查看历史"></label>
+              <input id="historyPerson" type="hidden">
+              <div class="person-picker-list" id="historyPersonResults"></div>
+            </div>
+            <label>类型<select id="historyType"><option value="">全部类型</option><option value="deposit">存入</option><option value="withdraw">取用</option></select></label>
+            <label>状态<select id="historyStatus"><option value="">全部状态</option><option value="normal">正常</option><option value="voided">作废</option></select></label>
+            <label>开始日期<input id="historyStartDate" type="date"></label>
+            <label>结束日期<input id="historyEndDate" type="date"></label>
+            <div class="filter-actions">
+              <button class="primary-button" id="historyQuery" type="button">查询</button>
+              <button class="secondary-button" id="historyReset" type="button">重置</button>
+            </div>
+          </div>
+          <div class="metrics-grid small">
+            <article class="metric-card"><span>当前余额</span><strong id="historyBalance">0</strong></article>
+            <article class="metric-card"><span>存入合计</span><strong>1,700</strong></article>
+            <article class="metric-card"><span>取用合计</span><strong>500</strong></article>
+            <article class="metric-card"><span>记录状态</span><strong id="historyRecordState">0</strong></article>
+          </div>
+          <p class="filter-summary" id="historyMetricNote"></p>
+          <p class="filter-summary" id="historySummary"></p>
+          <div class="history-ledger" id="historyList"></div>
+          <div class="pagination-bar" id="historyPager"></div>
+        </section>
+      </section>
+
+      <section class="page" id="importExport">
+        <div class="page-heading">
+          <div>
+            <h2>数据维护</h2>
+            <p>用于迁移 v9 数据、导出备份和检查异常记录，导入前请先预览。</p>
+          </div>
+        </div>
+        <div class="two-column">
+          <section class="panel stacked">
+            <h3>导入 Excel v9 CSV</h3>
+            <p class="helper-note">先预览再导入，确认错误行后再写入云端数据。</p>
+            <input type="file" accept=".csv">
+            <button class="primary-button" data-requires="admin" type="button">预览导入</button>
+            <div class="import-summary">
+              <span>总行数 128</span><span>可导入 124</span><span>错误 4</span>
+            </div>
+          </section>
+          <section class="panel stacked">
+            <h3>导出数据</h3>
+            <button class="secondary-button" data-requires="admin" type="button">导出全部流水</button>
+            <button class="secondary-button" data-requires="admin" type="button">导出余额表</button>
+            <button class="secondary-button" data-requires="admin" type="button">导出操作日志</button>
+          </section>
+        </div>
+      </section>
+
+      <section class="page" id="settings">
+        <div class="page-heading">
+          <div>
+          <h2>系统信息</h2>
+          <p>查看当前版本、部署目标、数据保存策略和维护入口。</p>
+          </div>
+        </div>
+        <div class="two-column">
+          <section class="panel stacked">
+            <h3>版本介绍</h3>
+            <div class="info-list">
+              <span>项目版本：v0.1.0 云端共享版原型</span>
+              <span>目标平台：Cloudflare Workers + D1</span>
+              <span>数据策略：流水永久保存，作废不删除</span>
+              <span>适配设备：电脑、平板、手机</span>
+            </div>
+          </section>
+          <section class="panel stacked">
+            <h3>维护入口</h3>
+            <button class="secondary-button" data-page-jump="auditLogs" data-requires="audit" type="button">查看操作日志</button>
+            <button class="secondary-button" data-requires="admin" type="button">导出完整备份</button>
+            <button class="secondary-button" data-requires="admin" type="button">检查异常数据</button>
+            <button class="secondary-button" data-requires="admin" type="button">初始化管理员说明</button>
+          </section>
+        </div>
+        <section class="panel permission-panel">
+          <h3>权限说明</h3>
+          <div class="permission-grid">
+            <article><strong>管理员</strong><span>全部功能，包含导入导出、用户维护和全局操作日志。</span></article>
+            <article><strong>操作员</strong><span>可录入和查看数据，可查看自己的操作日志，不能做系统维护。</span></article>
+            <article><strong>只读成员</strong><span>只查看工作台、存票人、记录和个人历史，不能改动数据。</span></article>
+          </div>
+        </section>
+      </section>
+
+      <section class="page" id="auditLogs">
+        <div class="page-heading">
+          <div>
+            <h2>操作日志</h2>
+            <p>查看新增、作废、恢复、导入导出和登录等关键操作。</p>
+          </div>
+          <button class="secondary-button" data-page-jump="settings" type="button">返回系统信息</button>
+        </div>
+        <section class="panel">
+          <div class="filter-panel">
+            <label>操作人<input id="auditUser" placeholder="搜索操作人"></label>
+            <label>操作类型<select id="auditType"><option value="">全部类型</option><option value="新增记录">新增记录</option><option value="作废记录">作废记录</option><option value="恢复记录">恢复记录</option><option value="修改存票人状态">修改存票人状态</option><option value="导出数据">导出数据</option><option value="登录">登录</option></select></label>
+            <label>开始日期<input id="auditStartDate" type="date"></label>
+            <label>结束日期<input id="auditEndDate" type="date"></label>
+            <div class="filter-actions">
+              <button class="primary-button" id="auditQuery" type="button">查询</button>
+              <button class="secondary-button" id="auditReset" type="button">重置</button>
+            </div>
+          </div>
+          <p class="helper-note">管理员可查看全部日志；操作员只查看自己的操作；只读成员不开放日志入口。</p>
+          <p class="filter-summary" id="auditSummary"></p>
+          <div class="responsive-table audit-table" id="auditTable"></div>
+          <div class="pagination-bar" id="auditPager"></div>
+        </section>
+      </section>
+
+      <section class="page" id="more">
+        <div class="page-heading">
+          <div>
+            <h2>更多</h2>
+            <p>手机和平板的低频功能入口，常用操作仍在底部导航。</p>
+          </div>
+        </div>
+        <section class="panel more-grid">
+          <button class="more-card" data-page-jump="history" type="button"><strong>个人历史</strong><span>查看某个存票人的完整流水</span></button>
+          <button class="more-card" data-page-jump="importExport" data-requires="admin" type="button"><strong>数据维护</strong><span>迁移 v9 数据和导出备份</span></button>
+          <button class="more-card" data-page-jump="settings" type="button"><strong>系统信息</strong><span>版本、数据策略和维护入口</span></button>
+          <button class="more-card" data-page-jump="auditLogs" data-requires="audit" type="button"><strong>操作日志</strong><span>查看关键操作轨迹</span></button>
+          <button class="more-card" id="moreLogout" type="button"><strong>退出登录</strong><span>回到登录页</span></button>
+        </section>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="手机导航">
+      <button class="nav-button active" data-page="dashboard" type="button"><span class="nav-icon">⌂</span>工作台</button>
+      <button class="nav-button" data-page="entry" data-requires="write" type="button"><span class="nav-icon">＋</span>录入</button>
+      <button class="nav-button" data-page="records" type="button"><span class="nav-icon">≡</span>记录</button>
+      <button class="nav-button" data-page="people" type="button"><span class="nav-icon">◎</span>存票人</button>
+      <button class="nav-button" data-page="more" type="button"><span class="nav-icon">⋯</span>更多</button>
+    </nav>
+  </div>
+
+  <div class="modal-backdrop" id="confirmModal" hidden>
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+      <h2 id="confirmTitle">确认操作</h2>
+      <p id="confirmMessage"></p>
+      <label id="confirmReasonLabel">原因<textarea id="confirmReason" rows="3" placeholder="请输入原因"></textarea></label>
+      <div class="button-row modal-actions">
+        <button class="secondary-button" id="cancelConfirm" type="button">取消</button>
+        <button class="primary-button" id="acceptConfirm" type="button">确认</button>
+      </div>
+    </section>
+  </div>
+  <div class="modal-backdrop" id="personStatusModal" hidden>
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="personStatusTitle">
+      <h2 id="personStatusTitle">修改存票人状态</h2>
+      <p id="personStatusMessage"></p>
+      <p class="status-rule-note">正常：可录入并公开展示正余额；停用：内部保留、外部不展示；拉黑：默认列表和榜单隐藏，仅可通过搜索查看历史。</p>
+      <label>新状态
+        <select id="personStatusNext">
+          <option value="正常">正常</option>
+          <option value="停用">停用</option>
+          <option value="拉黑">拉黑</option>
+        </select>
+      </label>
+      <label>调整原因<textarea id="personStatusReason" rows="3" placeholder="例如：长期停用、异常核对、恢复正常"></textarea></label>
+      <div class="button-row modal-actions">
+        <button class="secondary-button" id="cancelPersonStatus" type="button">取消</button>
+        <button class="primary-button" id="acceptPersonStatus" type="button">保存状态</button>
+      </div>
+    </section>
+  </div>
+  <script src="./app.js"></script>
+</body>
+</html>
