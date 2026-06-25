@@ -57,16 +57,31 @@ export type AuditLog = {
 };
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<ApiResult<T>> {
-  const response = await fetch(url, {
-    credentials: "include",
-    headers: {
-      "content-type": "application/json",
-      ...init?.headers
-    },
-    ...init
-  });
-  const data = await response.json<ApiResult<T>>();
-  return data;
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 12000);
+  try {
+    const response = await fetch(url, {
+      credentials: "include",
+      signal: controller.signal,
+      headers: {
+        "content-type": "application/json",
+        ...init?.headers
+      },
+      ...init
+    });
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      return { ok: false, message: "接口没有返回 JSON，请确认打开的是 Worker 地址，而不是纯 Pages 静态地址。" };
+    }
+    return await response.json<ApiResult<T>>();
+  } catch (error) {
+    const message = error instanceof DOMException && error.name === "AbortError"
+      ? "请求超时，请确认当前地址支持 /api 接口。"
+      : "请求失败，请检查网络或后端接口。";
+    return { ok: false, message };
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
 }
 
 export function getMe() {
