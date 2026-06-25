@@ -202,11 +202,11 @@
 - [x] 检查 Cloudflare Token。
 - [x] 创建 D1 数据库。
 - [x] 写入 `database_id`。
-- [ ] 设置 `SESSION_SECRET`。
-- [ ] 设置 `ADMIN_INIT_TOKEN`。
+- [x] 设置 `SESSION_SECRET`。
+- [x] 设置 `ADMIN_INIT_TOKEN`。
 - [x] 执行本地迁移。
 - [x] 执行远程迁移。
-- [ ] 执行正式部署。
+- [x] 执行正式部署。
 - [ ] 电脑端验收。
 - [ ] 平板端验收。
 - [ ] 手机端验收。
@@ -224,8 +224,9 @@
 
 - 2026-06-25 远程 D1 已创建并迁移成功。
 - 2026-06-25 `database_id` 更新后，本地 D1 已重新迁移并重新初始化开发管理员。
-- 2026-06-25 设置 Worker Secret 失败，Cloudflare 返回 `Authentication error [code: 10000]`。
-- 推断当前 Token 具备 D1 权限，但缺少 Workers Scripts Secret/编辑权限；需要补 Token 权限后继续部署。
+- 2026-06-25 更新 Token 权限后，Worker Secret 已成功设置。
+- 2026-06-25 Worker 已部署到 `https://jcc-ticket-lite.2379008409.workers.dev`。
+- 2026-06-25 生产管理员已初始化，线上登录和公开榜接口验证通过。
 
 ## 11. 风险与优先级
 

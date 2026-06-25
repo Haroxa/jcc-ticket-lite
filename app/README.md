@@ -73,12 +73,14 @@ password: admin123456
 - 远程 D1 数据库 `jcc_ticket_lite` 已创建。
 - `wrangler.jsonc` 已写入远程 `database_id`。
 - 远程 D1 已执行 `0001_init.sql` 迁移。
+- Worker Secret 已设置。
+- Worker 已部署到 `workers.dev`。
+- 生产管理员已初始化，账号信息保存在本地 `local-secrets/production-admin-account.md`。
 
 待处理：
 
-- 设置 Worker Secret 时 Cloudflare 返回 `Authentication error [code: 10000]`。
-- 当前 Token 很可能缺少 Workers Scripts Secret/编辑权限；D1 权限是可用的。
-- 处理方式：到 Cloudflare Dashboard 给 Token 增加 Workers Scripts Edit 权限，或创建新的最小权限 Token 后再执行 `wrangler secret put`。
+- 绑定自定义域名。
+- 完善前端权限隐藏、计算工具正式接入和导入导出。
 
 ## 注意
 

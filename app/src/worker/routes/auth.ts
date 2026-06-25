@@ -41,7 +41,7 @@ export async function handleSetupAdmin(request: Request, env: Env) {
 
   const payload = await readJson<SetupPayload>(request);
   if (!payload) return fail("请求内容格式不正确");
-  if (payload.token !== env.ADMIN_INIT_TOKEN) return fail("初始化令牌不正确", 403);
+  if (!payload.token || payload.token.trim() !== env.ADMIN_INIT_TOKEN.trim()) return fail("初始化令牌不正确", 403);
   if (!payload.username || !payload.password || !payload.displayName) {
     return fail("用户名、密码和显示名称不能为空");
   }

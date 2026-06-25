@@ -24,7 +24,7 @@ export async function sha256(value: string) {
   return toHex(await crypto.subtle.digest("SHA-256", encoder.encode(value)));
 }
 
-export async function hashPassword(password: string, salt = randomHex(16)) {
+export async function hashPassword(password: string, salt = randomHex(16), iterations = 100000) {
   const passwordKey = await crypto.subtle.importKey(
     "raw",
     encoder.encode(password),
@@ -37,17 +37,17 @@ export async function hashPassword(password: string, salt = randomHex(16)) {
       name: "PBKDF2",
       hash: "SHA-256",
       salt: encoder.encode(salt),
-      iterations: 120000
+      iterations
     },
     passwordKey,
     256
   );
-  return `pbkdf2_sha256$120000$${salt}$${toHex(bits)}`;
+  return `pbkdf2_sha256$${iterations}$${salt}$${toHex(bits)}`;
 }
 
 export async function verifyPassword(password: string, storedHash: string) {
   const [algorithm, iterations, salt, hash] = storedHash.split("$");
   if (algorithm !== "pbkdf2_sha256" || !iterations || !salt || !hash) return false;
-  const nextHash = await hashPassword(password, salt);
+  const nextHash = await hashPassword(password, salt, Number(iterations));
   return nextHash === storedHash;
 }
