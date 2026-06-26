@@ -154,12 +154,14 @@ export function getDashboard() {
   }>("/api/dashboard");
 }
 
-export function listRecords(params: { keyword?: string; personId?: string; type?: string; status?: string; page?: number; pageSize?: number }) {
+export function listRecords(params: { keyword?: string; personId?: string; type?: string; status?: string; dateFrom?: string; dateTo?: string; page?: number; pageSize?: number }) {
   const search = new URLSearchParams();
   if (params.keyword) search.set("keyword", params.keyword);
   if (params.personId) search.set("personId", params.personId);
   if (params.type) search.set("type", params.type);
   if (params.status) search.set("status", params.status);
+  if (params.dateFrom) search.set("dateFrom", params.dateFrom);
+  if (params.dateTo) search.set("dateTo", params.dateTo);
   if (params.page) search.set("page", String(params.page));
   if (params.pageSize) search.set("pageSize", String(params.pageSize));
   return requestJson<PageData<TicketRecord>>(`/api/records?${search.toString()}`);

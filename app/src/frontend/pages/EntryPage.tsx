@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { createRecord, listPeople, type Account, type Person } from "../api";
+import { createRecord, listPeople, listRecords, type Account, type Person, type TicketRecord } from "../api";
 import { PersonSearchSelect } from "../components/PersonSearchSelect/PersonSearchSelect";
+import { formatLocalMinute } from "../utils/time";
 import { canWrite } from "../utils/permissions";
 
 function currentMinute() {
@@ -34,6 +35,7 @@ export function EntryPage({ account }: EntryPageProps) {
   const [calcQty, setCalcQty] = useState(1);
   const [customPrice, setCustomPrice] = useState("");
   const [calcSteps, setCalcSteps] = useState<CalcStep[]>([]);
+  const [recentRecords, setRecentRecords] = useState<TicketRecord[]>([]);
 
   useEffect(() => {
     listPeople({ status: "normal", pageSize: 50 }).then((result) => {
@@ -50,9 +52,19 @@ export function EntryPage({ account }: EntryPageProps) {
     : selectedPerson?.balance ?? 0;
   const calcTotal = calcSteps.reduce((sum, step) => sum + step.price * step.qty * step.direction, 0);
 
+  async function loadRecentRecords(nextPersonId: string) {
+    if (!nextPersonId) {
+      setRecentRecords([]);
+      return;
+    }
+    const result = await listRecords({ personId: nextPersonId, page: 1, pageSize: 5 });
+    if (result.ok) setRecentRecords(result.data.items);
+  }
+
   function selectPerson(person: Person) {
     setPersonId(person.id);
     setPersonKeyword(person.name);
+    void loadRecentRecords(person.id);
   }
 
   function addCalcStep(price: number, direction: 1 | -1) {
@@ -106,6 +118,7 @@ export function EntryPage({ account }: EntryPageProps) {
     setNotice(`记录已保存，当前余额 ${result.data.balance}。`);
     const refreshed = await listPeople({ status: "normal", pageSize: 50 });
     if (refreshed.ok) setPeople(refreshed.data.items);
+    await loadRecentRecords(personId);
   }
 
   return (
@@ -117,7 +130,7 @@ export function EntryPage({ account }: EntryPageProps) {
           selectedId={personId}
           value={personKeyword}
           emptyText="没有匹配的正常存票人。"
-          onInputChange={(value) => { setPersonKeyword(value); setPersonId(""); }}
+          onInputChange={(value) => { setPersonKeyword(value); setPersonId(""); setRecentRecords([]); }}
           onSelect={selectPerson}
         />
         <div>
@@ -143,6 +156,20 @@ export function EntryPage({ account }: EntryPageProps) {
         <div className="panel-header"><h3>{selectedPerson?.name || "未选择"}</h3><span>当前存票人</span></div>
         <div className="balance-display">{selectedPerson?.balance ?? 0}</div>
         <p className="muted">只显示正常状态存票人；停用和拉黑不可录入。</p>
+        <div className="person-recent-block">
+          <div className="panel-header compact"><h3>最近操作</h3><span>最近 5 条</span></div>
+          <div className="person-recent-list">
+            {recentRecords.map((record) => (
+              <article className={`record-card ${record.type} ${record.status === "voided" ? "voided" : ""}`} key={record.id}>
+                <strong>{record.type === "deposit" ? "存入" : "取用"} {record.amount}</strong>
+                <span>{formatLocalMinute(record.recordedAt)} · {record.status === "normal" ? "正常" : "作废"}</span>
+                {(record.note || record.voidReason) && <span>{record.note || record.voidReason}</span>}
+              </article>
+            ))}
+            {!selectedPerson && <p className="empty-inline">选择存票人后显示最近操作。</p>}
+            {selectedPerson && !recentRecords.length && <p className="empty-inline">该存票人暂无历史记录。</p>}
+          </div>
+        </div>
       </aside>
 
       {showCalculator && (

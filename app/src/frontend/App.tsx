@@ -98,7 +98,7 @@ export default function App() {
       {page === "history" && <HistoryPage />}
       {page === "accounts" && <AccountsPage account={account} />}
       {page === "auditLogs" && <AuditLogsPage account={account} />}
-      {page === "settings" && <SettingsPage />}
+      {page === "settings" && <SettingsPage account={account} onNavigate={navigate} />}
       {page === "more" && <MorePage account={account} onNavigate={navigate} onLogout={handleLogout} />}
     </AppLayout>
   );
