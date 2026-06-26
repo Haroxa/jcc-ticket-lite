@@ -472,6 +472,9 @@ input, select, textarea {
   align-items: end;
   margin-top: 12px;
 }
+.account-create {
+  grid-template-columns: repeat(4, minmax(150px, 1fr)) auto;
+}
 .responsive-table { display: grid; gap: 10px; margin-top: 12px; }
 .table-row {
   display: grid;
@@ -563,8 +566,27 @@ input, select, textarea {
 .audit-table .table-row {
   grid-template-columns: 52px 1fr 0.8fr 0.8fr 0.8fr minmax(180px, 1.6fr);
 }
+.accounts-table .table-row {
+  grid-template-columns: 52px 1.1fr 0.75fr 0.7fr 1fr 1fr auto;
+}
+.accounts-table strong {
+  display: grid;
+  gap: 3px;
+}
+.accounts-table strong small {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+}
 .record-row-voided {
   opacity: 0.62;
+}
+.account-status-disabled {
+  opacity: 0.68;
+}
+.account-status-disabled .status-pill {
+  color: var(--muted);
+  background: #eef0ef;
 }
 .table-row.deposit { border-left: 4px solid var(--green); }
 .table-row.withdraw { border-left: 4px solid var(--amber); }
@@ -686,7 +708,8 @@ input, select, textarea {
   .entry-layout .calculator-panel { grid-column: auto; }
   .calculator-grid { grid-template-columns: 1fr; }
   .filter-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .inline-create { grid-template-columns: 1fr; }
+  .inline-create,
+  .account-create { grid-template-columns: 1fr; }
   .table-row { grid-template-columns: 44px 1fr 1fr 0.8fr 0.8fr auto; }
 }
 
@@ -738,7 +761,8 @@ input, select, textarea {
   .table-row,
   .people-table .table-row,
   .records-table .table-row,
-  .audit-table .table-row {
+  .audit-table .table-row,
+  .accounts-table .table-row {
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 6px;

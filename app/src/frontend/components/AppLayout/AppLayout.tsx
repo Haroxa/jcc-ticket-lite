@@ -1,13 +1,13 @@
 import type { PropsWithChildren } from "react";
 import type { Account } from "../../api";
 import type { PageKey } from "../../App";
-import { canAudit, canWrite } from "../../utils/permissions";
+import { canAdmin, canAudit, canWrite } from "../../utils/permissions";
 
 type NavItem = {
   key: PageKey;
   label: string;
   icon: string;
-  require?: "write" | "audit";
+  require?: "write" | "audit" | "admin";
 };
 
 const primaryNav: NavItem[] = [
@@ -19,6 +19,7 @@ const primaryNav: NavItem[] = [
 ];
 
 const systemNav: NavItem[] = [
+  { key: "accounts", label: "账号管理", icon: "♙", require: "admin" },
   { key: "auditLogs", label: "操作日志", icon: "☷", require: "audit" },
   { key: "settings", label: "系统信息", icon: "ⓘ" }
 ];
@@ -41,6 +42,7 @@ export function AppLayout({ activePage, account, pageTitle, onNavigate, onLogout
   const visibleNav = (item: NavItem) => {
     if (item.require === "write") return canWrite(account);
     if (item.require === "audit") return canAudit(account);
+    if (item.require === "admin") return canAdmin(account);
     return true;
   };
 

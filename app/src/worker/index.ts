@@ -3,6 +3,7 @@ import { handleLogin, handleLogout, handleMe, handleSetupAdmin } from "./routes/
 import { handlePeople, handlePersonDetail, handlePersonStatus, handlePublicBoard } from "./routes/people";
 import { handleDashboard, handleRecords, handleRestoreRecord, handleVoidRecord } from "./routes/records";
 import { handleAuditLogs } from "./routes/auditLogs";
+import { handleAccountDetail, handleAccountPassword, handleAccounts, handleAccountStatus } from "./routes/accounts";
 import type { Env } from "./types";
 import { notFound } from "./utils/response";
 
@@ -46,6 +47,10 @@ export default {
       return handleAuditLogs(request, env);
     }
 
+    if (url.pathname === "/api/accounts") {
+      return handleAccounts(request, env);
+    }
+
     const voidRecordMatch = url.pathname.match(/^\/api\/records\/([^/]+)\/void$/);
     if (voidRecordMatch) {
       return handleVoidRecord(request, env, voidRecordMatch[1]);
@@ -64,6 +69,21 @@ export default {
     const personDetailMatch = url.pathname.match(/^\/api\/people\/([^/]+)$/);
     if (personDetailMatch) {
       return handlePersonDetail(request, env, personDetailMatch[1]);
+    }
+
+    const accountStatusMatch = url.pathname.match(/^\/api\/accounts\/([^/]+)\/status$/);
+    if (accountStatusMatch) {
+      return handleAccountStatus(request, env, accountStatusMatch[1]);
+    }
+
+    const accountPasswordMatch = url.pathname.match(/^\/api\/accounts\/([^/]+)\/password$/);
+    if (accountPasswordMatch) {
+      return handleAccountPassword(request, env, accountPasswordMatch[1]);
+    }
+
+    const accountDetailMatch = url.pathname.match(/^\/api\/accounts\/([^/]+)$/);
+    if (accountDetailMatch) {
+      return handleAccountDetail(request, env, accountDetailMatch[1]);
     }
 
     if (url.pathname === "/api/public/board") {

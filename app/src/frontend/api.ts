@@ -9,6 +9,13 @@ export type Account = {
   role: "admin" | "operator" | "viewer";
 };
 
+export type ManagedAccount = Account & {
+  status: "active" | "disabled";
+  createdAt: string;
+  updatedAt: string;
+  lastLoginAt: string;
+};
+
 export type PersonStatus = "normal" | "disabled" | "blocked";
 
 export type Person = {
@@ -165,6 +172,49 @@ export function listAuditLogs(params: { actor?: string; action?: string; page?: 
   if (params.page) search.set("page", String(params.page));
   if (params.pageSize) search.set("pageSize", String(params.pageSize));
   return requestJson<PageData<AuditLog>>(`/api/audit-logs?${search.toString()}`);
+}
+
+export function listAccounts(params: { keyword?: string; role?: string; status?: string; page?: number; pageSize?: number }) {
+  const search = new URLSearchParams();
+  if (params.keyword) search.set("keyword", params.keyword);
+  if (params.role) search.set("role", params.role);
+  if (params.status) search.set("status", params.status);
+  if (params.page) search.set("page", String(params.page));
+  if (params.pageSize) search.set("pageSize", String(params.pageSize));
+  return requestJson<PageData<ManagedAccount>>(`/api/accounts?${search.toString()}`);
+}
+
+export function createAccount(payload: {
+  username: string;
+  password: string;
+  displayName: string;
+  role: Account["role"];
+}) {
+  return requestJson<{ account: ManagedAccount }>("/api/accounts", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function updateAccount(accountId: string, payload: { displayName: string; role: Account["role"] }) {
+  return requestJson<{ account: ManagedAccount }>(`/api/accounts/${accountId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function changeAccountStatus(accountId: string, status: ManagedAccount["status"], reason: string) {
+  return requestJson<{ account: ManagedAccount; changed: boolean }>(`/api/accounts/${accountId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status, reason })
+  });
+}
+
+export function resetAccountPassword(accountId: string, password: string, reason: string) {
+  return requestJson<{ updated: boolean }>(`/api/accounts/${accountId}/password`, {
+    method: "PATCH",
+    body: JSON.stringify({ password, reason })
+  });
 }
 
 export function createRecord(payload: {

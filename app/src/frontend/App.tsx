@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getMe, logout, type Account } from "./api";
 import { AppLayout } from "./components/AppLayout/AppLayout";
+import { AccountsPage } from "./pages/AccountsPage";
 import { AuditLogsPage } from "./pages/AuditLogsPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { EntryPage } from "./pages/EntryPage";
@@ -18,6 +19,7 @@ export type PageKey =
   | "people"
   | "records"
   | "history"
+  | "accounts"
   | "auditLogs"
   | "settings"
   | "publicBoard";
@@ -28,6 +30,7 @@ const pageMap: Record<PageKey, string> = {
   people: "存票人",
   records: "存取记录",
   history: "个人历史",
+  accounts: "账号管理",
   auditLogs: "操作日志",
   settings: "系统信息",
   publicBoard: "公开存票榜"
@@ -46,6 +49,7 @@ export default function App() {
       return;
     }
     if (nextPage === "entry" && !canWrite(account)) return;
+    if (nextPage === "accounts" && account.role !== "admin") return;
     if (nextPage === "auditLogs" && !canAudit(account)) return;
     setPage(nextPage);
   }
@@ -89,6 +93,7 @@ export default function App() {
       {page === "people" && <PeoplePage account={account} />}
       {page === "records" && <RecordsPage account={account} />}
       {page === "history" && <HistoryPage />}
+      {page === "accounts" && <AccountsPage account={account} />}
       {page === "auditLogs" && <AuditLogsPage account={account} />}
       {page === "settings" && <SettingsPage />}
     </AppLayout>
