@@ -37,6 +37,15 @@ export type PageData<T> = {
   totalPages: number;
 };
 
+export type RecordSummary = {
+  depositTotal: number;
+  withdrawTotal: number;
+  netTotal: number;
+  normalCount: number;
+  voidedCount: number;
+  lastRecordedAt: string;
+};
+
 export type TicketRecord = {
   id: string;
   personId: string;
@@ -164,7 +173,7 @@ export function listRecords(params: { keyword?: string; personId?: string; type?
   if (params.dateTo) search.set("dateTo", params.dateTo);
   if (params.page) search.set("page", String(params.page));
   if (params.pageSize) search.set("pageSize", String(params.pageSize));
-  return requestJson<PageData<TicketRecord>>(`/api/records?${search.toString()}`);
+  return requestJson<PageData<TicketRecord> & { summary: RecordSummary }>(`/api/records?${search.toString()}`);
 }
 
 export function listAuditLogs(params: { actor?: string; action?: string; page?: number; pageSize?: number }) {

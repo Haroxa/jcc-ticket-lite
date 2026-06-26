@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { listPeople, listRecords, type Person, type TicketRecord } from "../api";
+import { listPeople, listRecords, type Person, type RecordSummary, type TicketRecord } from "../api";
 import { EmptyState } from "../components/EmptyState/EmptyState";
 import { Pagination } from "../components/Pagination/Pagination";
 import { PersonSearchSelect } from "../components/PersonSearchSelect/PersonSearchSelect";
@@ -20,12 +20,17 @@ export function HistoryPage() {
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [data, setData] = useState<{ items: TicketRecord[]; total: number; totalPages: number }>({ items: [], total: 0, totalPages: 1 });
+  const [data, setData] = useState<{ items: TicketRecord[]; total: number; totalPages: number; summary: RecordSummary }>({
+    items: [],
+    total: 0,
+    totalPages: 1,
+    summary: { depositTotal: 0, withdrawTotal: 0, netTotal: 0, normalCount: 0, voidedCount: 0, lastRecordedAt: "" }
+  });
   const [notice, setNotice] = useState("");
 
   async function loadHistory(nextPersonId = personId, nextPage = page, nextPageSize = pageSize) {
     if (!nextPersonId) {
-      setData({ items: [], total: 0, totalPages: 1 });
+      setData({ items: [], total: 0, totalPages: 1, summary: { depositTotal: 0, withdrawTotal: 0, netTotal: 0, normalCount: 0, voidedCount: 0, lastRecordedAt: "" } });
       setPage(1);
       setNotice("");
       return;
@@ -35,7 +40,7 @@ export function HistoryPage() {
       setNotice(result.message);
       return;
     }
-    setData({ items: result.data.items, total: result.data.total, totalPages: result.data.totalPages });
+    setData({ items: result.data.items, total: result.data.total, totalPages: result.data.totalPages, summary: result.data.summary });
     setPage(result.data.page);
     setNotice("");
   }
@@ -55,7 +60,7 @@ export function HistoryPage() {
     setStatus("");
     setDateFrom("");
     setDateTo("");
-    setData({ items: [], total: 0, totalPages: 1 });
+    setData({ items: [], total: 0, totalPages: 1, summary: { depositTotal: 0, withdrawTotal: 0, netTotal: 0, normalCount: 0, voidedCount: 0, lastRecordedAt: "" } });
     setPage(1);
     setNotice("");
   }
@@ -80,13 +85,7 @@ export function HistoryPage() {
   }
 
   const selectedPerson = people.find((person) => person.id === personId);
-  const pageDeposit = data.items
-    .filter((record) => record.status === "normal" && record.type === "deposit")
-    .reduce((sum, record) => sum + record.amount, 0);
-  const pageWithdraw = data.items
-    .filter((record) => record.status === "normal" && record.type === "withdraw")
-    .reduce((sum, record) => sum + record.amount, 0);
-  const normalCount = data.items.filter((record) => record.status === "normal").length;
+  const statusLabel = selectedPerson?.status === "normal" ? "正常" : selectedPerson?.status === "disabled" ? "停用" : selectedPerson?.status === "blocked" ? "拉黑" : "未选择";
 
   return (
     <section className="panel">
@@ -95,7 +94,7 @@ export function HistoryPage() {
           people={people}
           selectedId={personId}
           value={personKeyword}
-          onInputChange={(value) => { setPersonKeyword(value); setPersonId(""); setData({ items: [], total: 0, totalPages: 1 }); }}
+          onInputChange={(value) => { setPersonKeyword(value); setPersonId(""); setData({ items: [], total: 0, totalPages: 1, summary: { depositTotal: 0, withdrawTotal: 0, netTotal: 0, normalCount: 0, voidedCount: 0, lastRecordedAt: "" } }); }}
           onSelect={selectPerson}
         />
         <label>类型<select value={type} onChange={(event) => { setType(event.target.value); setPage(1); }}><option value="">全部类型</option><option value="deposit">存入</option><option value="withdraw">取用</option></select></label>
@@ -111,12 +110,31 @@ export function HistoryPage() {
         <button className="ghost-button" type="button" onClick={() => setDatePreset("today")}>今日</button>
         <button className="ghost-button" type="button" onClick={() => setDatePreset("week")}>近 7 天</button>
       </div>
-      <p className="filter-summary">个人历史保留完整流水；当前筛选共 {data.total} 条。</p>
+      <p className="filter-summary">个人历史用于核对单个存票人的余额变化；当前筛选共 {data.total} 条。</p>
+      <section className="history-profile">
+        <div>
+          <span>存票人</span>
+          <strong>{selectedPerson?.name || "未选择"}</strong>
+        </div>
+        <div>
+          <span>状态</span>
+          <strong>{statusLabel}</strong>
+        </div>
+        <div>
+          <span>最近操作</span>
+          <strong>{data.summary.lastRecordedAt ? formatLocalMinute(data.summary.lastRecordedAt) : "暂无"}</strong>
+        </div>
+        <div>
+          <span>备注</span>
+          <strong>{selectedPerson?.note || "无备注"}</strong>
+        </div>
+      </section>
       <div className="history-summary-grid">
         <article className="metric-card"><span>当前余额</span><strong>{selectedPerson?.balance ?? 0}</strong></article>
-        <article className="metric-card"><span>本页存入</span><strong>{pageDeposit}</strong></article>
-        <article className="metric-card"><span>本页取用</span><strong>{pageWithdraw}</strong></article>
-        <article className="metric-card"><span>本页有效记录</span><strong>{normalCount}</strong></article>
+        <article className="metric-card"><span>筛选存入</span><strong>{data.summary.depositTotal}</strong></article>
+        <article className="metric-card"><span>筛选取用</span><strong>{data.summary.withdrawTotal}</strong></article>
+        <article className="metric-card"><span>筛选净变化</span><strong>{data.summary.netTotal}</strong></article>
+        <article className="metric-card"><span>有效 / 作废</span><strong>{data.summary.normalCount} / {data.summary.voidedCount}</strong></article>
       </div>
       {notice && <p className="notice-text">{notice}</p>}
       <div className="responsive-table records-table">

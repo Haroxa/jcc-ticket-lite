@@ -153,17 +153,28 @@ export function EntryPage({ account }: EntryPageProps) {
       </section>
 
       <aside className="panel person-side">
-        <div className="panel-header"><h3>{selectedPerson?.name || "未选择"}</h3><span>当前存票人</span></div>
-        <div className="balance-display">{selectedPerson?.balance ?? 0}</div>
-        <p className="muted">只显示正常状态存票人；停用和拉黑不可录入。</p>
+        <div className="person-side-head">
+          <div>
+            <span>当前存票人</span>
+            <h3>{selectedPerson?.name || "未选择"}</h3>
+          </div>
+          <span className="status-pill">{selectedPerson ? "正常" : "待选择"}</span>
+        </div>
+        <div className="balance-card">
+          <span>当前余额</span>
+          <strong>{selectedPerson?.balance ?? 0}</strong>
+          <small>只显示正常状态存票人；停用和拉黑不可录入。</small>
+        </div>
         <div className="person-recent-block">
           <div className="panel-header compact"><h3>最近操作</h3><span>最近 5 条</span></div>
           <div className="person-recent-list">
             {recentRecords.map((record) => (
-              <article className={`record-card ${record.type} ${record.status === "voided" ? "voided" : ""}`} key={record.id}>
-                <strong>{record.type === "deposit" ? "存入" : "取用"} {record.amount}</strong>
-                <span>{formatLocalMinute(record.recordedAt)} · {record.status === "normal" ? "正常" : "作废"}</span>
-                {(record.note || record.voidReason) && <span>{record.note || record.voidReason}</span>}
+              <article className={`recent-record-card ${record.type} ${record.status === "voided" ? "voided" : ""}`} key={record.id}>
+                <div>
+                  <strong>{record.type === "deposit" ? "存入" : "取用"} {record.amount}</strong>
+                  <span>{record.status === "normal" ? "正常" : "作废"}{record.note || record.voidReason ? ` · ${record.note || record.voidReason}` : ""}</span>
+                </div>
+                <time>{formatLocalMinute(record.recordedAt)}</time>
               </article>
             ))}
             {!selectedPerson && <p className="empty-inline">选择存票人后显示最近操作。</p>}

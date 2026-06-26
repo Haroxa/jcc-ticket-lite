@@ -150,6 +150,25 @@ async function listRecords(request: Request, env: Env) {
     ${whereSql}
   `).bind(...bindings).first<{ total: number }>();
   const total = totalRow?.total || 0;
+  const summaryRow = await env.DB.prepare(`
+    SELECT
+      COALESCE(SUM(CASE WHEN ticket_records.status = 'normal' AND ticket_records.type = 'deposit' THEN ticket_records.amount ELSE 0 END), 0) AS deposit_total,
+      COALESCE(SUM(CASE WHEN ticket_records.status = 'normal' AND ticket_records.type = 'withdraw' THEN ticket_records.amount ELSE 0 END), 0) AS withdraw_total,
+      COALESCE(SUM(CASE WHEN ticket_records.status = 'normal' THEN ticket_records.balance_delta ELSE 0 END), 0) AS net_total,
+      COALESCE(SUM(CASE WHEN ticket_records.status = 'normal' THEN 1 ELSE 0 END), 0) AS normal_count,
+      COALESCE(SUM(CASE WHEN ticket_records.status = 'voided' THEN 1 ELSE 0 END), 0) AS voided_count,
+      MAX(ticket_records.recorded_at) AS last_recorded_at
+    FROM ticket_records
+    JOIN ticket_people ON ticket_people.id = ticket_records.person_id
+    ${whereSql}
+  `).bind(...bindings).first<{
+    deposit_total: number;
+    withdraw_total: number;
+    net_total: number;
+    normal_count: number;
+    voided_count: number;
+    last_recorded_at: string | null;
+  }>();
   const offset = (page - 1) * pageSize;
   const result = await env.DB.prepare(`
     SELECT
@@ -177,7 +196,15 @@ async function listRecords(request: Request, env: Env) {
     page,
     pageSize,
     total,
-    totalPages: Math.max(1, Math.ceil(total / pageSize))
+    totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    summary: {
+      depositTotal: summaryRow?.deposit_total || 0,
+      withdrawTotal: summaryRow?.withdraw_total || 0,
+      netTotal: summaryRow?.net_total || 0,
+      normalCount: summaryRow?.normal_count || 0,
+      voidedCount: summaryRow?.voided_count || 0,
+      lastRecordedAt: summaryRow?.last_recorded_at || ""
+    }
   });
 }
 
