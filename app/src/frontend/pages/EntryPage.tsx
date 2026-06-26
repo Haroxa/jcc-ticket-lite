@@ -38,8 +38,6 @@ export function EntryPage({ account }: EntryPageProps) {
     listPeople({ status: "normal", pageSize: 50 }).then((result) => {
       if (result.ok) {
         setPeople(result.data.items);
-        setPersonId(result.data.items[0]?.id || "");
-        setPersonKeyword(result.data.items[0]?.name || "");
       }
     });
   }, []);
@@ -50,7 +48,7 @@ export function EntryPage({ account }: EntryPageProps) {
     ? selectedPerson.balance + (type === "deposit" ? numericAmount : -numericAmount)
     : selectedPerson?.balance ?? 0;
   const matchedPeople = people
-    .filter((person) => !personKeyword || person.name.includes(personKeyword) || person.note.includes(personKeyword))
+    .filter((person) => personKeyword && (person.name.includes(personKeyword) || person.note.includes(personKeyword)))
     .slice(0, 8);
   const calcTotal = calcSteps.reduce((sum, step) => sum + step.price * step.qty * step.direction, 0);
 
@@ -117,7 +115,7 @@ export function EntryPage({ account }: EntryPageProps) {
       <section className="panel form-panel">
         <label>时间<input type="datetime-local" value={recordedAt} onChange={(event) => setRecordedAt(event.target.value)} /></label>
         <div className="person-picker">
-          <label>存票人搜索<input value={personKeyword} onChange={(event) => setPersonKeyword(event.target.value)} placeholder="搜索姓名，点击下方结果选择" /></label>
+          <label>存票人搜索<input value={personKeyword} onChange={(event) => { setPersonKeyword(event.target.value); setPersonId(""); }} placeholder="输入姓名或备注后选择" /></label>
           <div className="person-picker-list" role="listbox">
             {matchedPeople.map((person) => (
               <button className={person.id === personId ? "active" : ""} key={person.id} type="button" onClick={() => selectPerson(person)}>
@@ -125,7 +123,8 @@ export function EntryPage({ account }: EntryPageProps) {
                 <span>余额 {person.balance}</span>
               </button>
             ))}
-            {!matchedPeople.length && <p className="muted">没有匹配的正常存票人。</p>}
+            {!personKeyword && <p className="muted">请输入姓名或备注搜索后选择存票人。</p>}
+            {personKeyword && !matchedPeople.length && <p className="muted">没有匹配的正常存票人。</p>}
           </div>
         </div>
         <div>
