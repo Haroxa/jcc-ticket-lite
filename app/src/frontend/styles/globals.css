@@ -648,7 +648,10 @@ input, select, textarea {
   grid-template-columns: 52px minmax(150px, 1fr) minmax(100px, 0.8fr) minmax(96px, 0.8fr) minmax(88px, 0.8fr) minmax(220px, 1.6fr);
 }
 .accounts-table .table-row {
-  grid-template-columns: 48px minmax(150px, 1.2fr) minmax(76px, 0.55fr) minmax(68px, 0.45fr) minmax(128px, 0.75fr) minmax(128px, 0.75fr) 218px;
+  grid-template-columns: minmax(130px, 1.1fr) minmax(70px, 0.48fr) minmax(62px, 0.38fr) minmax(118px, 0.68fr) minmax(118px, 0.68fr) 184px;
+}
+.accounts-table .table-row > span:first-child {
+  display: none;
 }
 .accounts-table .table-row > * {
   min-width: 0;
@@ -681,11 +684,11 @@ input, select, textarea {
 .accounts-table .account-cell-actions {
   justify-self: end;
   align-self: center;
-  width: 218px;
+  width: 184px;
 }
 .accounts-table .row-actions.account-cell-actions {
   display: grid;
-  grid-template-columns: 48px 48px 82px;
+  grid-template-columns: 42px 42px 72px;
   justify-content: end;
 }
 .accounts-table .account-cell-actions.muted {
@@ -903,17 +906,17 @@ input, select, textarea {
     grid-template-columns: 52px minmax(150px, 1fr) minmax(110px, 0.8fr) minmax(96px, 0.8fr) minmax(90px, 0.8fr) minmax(240px, 1.6fr);
   }
   .accounts-table .table-row {
-    min-width: 820px;
-    grid-template-columns: minmax(150px, 1.05fr) minmax(72px, 0.45fr) minmax(66px, 0.4fr) minmax(118px, 0.7fr) minmax(118px, 0.7fr) 198px;
+    min-width: 760px;
+    grid-template-columns: minmax(130px, 1fr) minmax(68px, 0.42fr) minmax(60px, 0.35fr) minmax(110px, 0.6fr) minmax(110px, 0.6fr) 180px;
   }
   .accounts-table .table-row > span:first-child {
     display: none;
   }
   .accounts-table .account-cell-actions {
-    width: 198px;
+    width: 180px;
   }
   .accounts-table .row-actions.account-cell-actions {
-    grid-template-columns: 44px 44px 76px;
+    grid-template-columns: 40px 40px 68px;
   }
 }
 
@@ -1020,6 +1023,7 @@ input, select, textarea {
     padding: 12px;
   }
   .accounts-table .account-cell-no {
+    display: inline-grid !important;
     grid-column: 1;
     grid-row: 1;
     width: max-content;
