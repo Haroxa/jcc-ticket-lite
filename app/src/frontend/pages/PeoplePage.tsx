@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { changePersonStatus, createPerson, listPeople, updatePerson, type Person, type PersonStatus } from "../api";
+import { changePersonStatus, createPerson, listPeople, updatePerson, type Account, type Person, type PersonStatus } from "../api";
+import { canAdmin } from "../utils/permissions";
 
 const statusLabel: Record<PersonStatus, string> = {
   normal: "正常",
@@ -7,7 +8,11 @@ const statusLabel: Record<PersonStatus, string> = {
   blocked: "拉黑"
 };
 
-export function PeoplePage() {
+type PeoplePageProps = {
+  account: Account;
+};
+
+export function PeoplePage({ account }: PeoplePageProps) {
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
@@ -32,6 +37,10 @@ export function PeoplePage() {
   }, []);
 
   async function handleCreatePerson() {
+    if (!canAdmin(account)) {
+      setNotice("只有管理员可以新增存票人。");
+      return;
+    }
     if (!newName.trim()) {
       setNotice("请输入存票人名称。");
       return;
@@ -47,6 +56,7 @@ export function PeoplePage() {
   }
 
   async function handleStatusChange(person: Person) {
+    if (!canAdmin(account)) return;
     const next = window.prompt(`修改 ${person.name} 状态：normal / disabled / blocked`, person.status);
     if (!next || !["normal", "disabled", "blocked"].includes(next)) return;
     const reason = window.prompt("请输入调整原因");
@@ -60,6 +70,7 @@ export function PeoplePage() {
   }
 
   async function handleEdit(person: Person) {
+    if (!canAdmin(account)) return;
     const name = window.prompt("存票人名称", person.name);
     if (!name) return;
     const note = window.prompt("备注", person.note) || "";
@@ -80,11 +91,13 @@ export function PeoplePage() {
           <button className="primary-button" type="button" onClick={() => loadPeople(1)}>查询</button>
         </div>
       </div>
-      <div className="inline-create">
-        <label>新增存票人<input value={newName} onChange={(event) => setNewName(event.target.value)} placeholder="输入名称" /></label>
-        <label>备注<input value={newNote} onChange={(event) => setNewNote(event.target.value)} placeholder="可选" /></label>
-        <button className="secondary-button" type="button" onClick={handleCreatePerson}>新增</button>
-      </div>
+      {canAdmin(account) && (
+        <div className="inline-create">
+          <label>新增存票人<input value={newName} onChange={(event) => setNewName(event.target.value)} placeholder="输入名称" /></label>
+          <label>备注<input value={newNote} onChange={(event) => setNewNote(event.target.value)} placeholder="可选" /></label>
+          <button className="secondary-button" type="button" onClick={handleCreatePerson}>新增</button>
+        </div>
+      )}
       <p className="filter-summary">内部管理页显示全部状态；停用和拉黑不会进入录入候选和公开榜单。</p>
       {notice && <p className="notice-text">{notice}</p>}
       <div className="responsive-table">
@@ -96,10 +109,12 @@ export function PeoplePage() {
             <span>{person.balance}</span>
             <span className="status-pill">{statusLabel[person.status]}</span>
             <span>{person.note || "无备注"}</span>
-            <div className="row-actions">
-              <button className="secondary-button row-action" type="button" onClick={() => handleEdit(person)}>编辑</button>
-              <button className="secondary-button row-action" type="button" onClick={() => handleStatusChange(person)}>改状态</button>
-            </div>
+            {canAdmin(account) ? (
+              <div className="row-actions">
+                <button className="secondary-button row-action" type="button" onClick={() => handleEdit(person)}>编辑</button>
+                <button className="secondary-button row-action" type="button" onClick={() => handleStatusChange(person)}>改状态</button>
+              </div>
+            ) : <span className="muted">只读</span>}
           </div>
         ))}
       </div>

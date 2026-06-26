@@ -10,6 +10,7 @@ import { PeoplePage } from "./pages/PeoplePage";
 import { PublicBoardPage } from "./pages/PublicBoardPage";
 import { RecordsPage } from "./pages/RecordsPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { canAudit, canWrite } from "./utils/permissions";
 
 export type PageKey =
   | "dashboard"
@@ -38,6 +39,16 @@ export default function App() {
   const [page, setPage] = useState<PageKey>("dashboard");
 
   const pageTitle = useMemo(() => pageMap[page], [page]);
+
+  function navigate(nextPage: PageKey) {
+    if (!account) {
+      setPage(nextPage);
+      return;
+    }
+    if (nextPage === "entry" && !canWrite(account)) return;
+    if (nextPage === "auditLogs" && !canAudit(account)) return;
+    setPage(nextPage);
+  }
 
   useEffect(() => {
     getMe()
@@ -70,15 +81,15 @@ export default function App() {
       activePage={page}
       account={account}
       pageTitle={pageTitle}
-      onNavigate={setPage}
+      onNavigate={navigate}
       onLogout={handleLogout}
     >
-      {page === "dashboard" && <DashboardPage onNavigate={setPage} />}
-      {page === "entry" && <EntryPage />}
-      {page === "people" && <PeoplePage />}
-      {page === "records" && <RecordsPage />}
+      {page === "dashboard" && <DashboardPage onNavigate={navigate} />}
+      {page === "entry" && <EntryPage account={account} />}
+      {page === "people" && <PeoplePage account={account} />}
+      {page === "records" && <RecordsPage account={account} />}
       {page === "history" && <HistoryPage />}
-      {page === "auditLogs" && <AuditLogsPage />}
+      {page === "auditLogs" && <AuditLogsPage account={account} />}
       {page === "settings" && <SettingsPage />}
     </AppLayout>
   );

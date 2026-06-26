@@ -1,23 +1,25 @@
 import type { PropsWithChildren } from "react";
 import type { Account } from "../../api";
 import type { PageKey } from "../../App";
+import { canAudit, canWrite } from "../../utils/permissions";
 
 type NavItem = {
   key: PageKey;
   label: string;
   icon: string;
+  require?: "write" | "audit";
 };
 
 const primaryNav: NavItem[] = [
   { key: "dashboard", label: "工作台", icon: "⌂" },
-  { key: "entry", label: "快速录入", icon: "＋" },
+  { key: "entry", label: "快速录入", icon: "＋", require: "write" },
   { key: "people", label: "存票人", icon: "◎" },
   { key: "records", label: "存取记录", icon: "≡" },
   { key: "history", label: "个人历史", icon: "◷" }
 ];
 
 const systemNav: NavItem[] = [
-  { key: "auditLogs", label: "操作日志", icon: "☷" },
+  { key: "auditLogs", label: "操作日志", icon: "☷", require: "audit" },
   { key: "settings", label: "系统信息", icon: "ⓘ" }
 ];
 
@@ -36,6 +38,12 @@ const roleLabel: Record<Account["role"], string> = {
 };
 
 export function AppLayout({ activePage, account, pageTitle, onNavigate, onLogout, children }: AppLayoutProps) {
+  const visibleNav = (item: NavItem) => {
+    if (item.require === "write") return canWrite(account);
+    if (item.require === "audit") return canAudit(account);
+    return true;
+  };
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -52,7 +60,7 @@ export function AppLayout({ activePage, account, pageTitle, onNavigate, onLogout
 
       <aside className="side-nav" aria-label="主导航">
         <div className="nav-section-label">日常操作</div>
-        {[...primaryNav].map((item) => (
+        {[...primaryNav].filter(visibleNav).map((item) => (
           <button
             className={`nav-button ${activePage === item.key ? "active" : ""}`}
             key={item.key}
@@ -65,7 +73,7 @@ export function AppLayout({ activePage, account, pageTitle, onNavigate, onLogout
         ))}
 
         <div className="nav-section-label">数据与系统</div>
-        {systemNav.map((item) => (
+        {systemNav.filter(visibleNav).map((item) => (
           <button
             className={`nav-button ${activePage === item.key ? "active" : ""}`}
             key={item.key}
@@ -78,9 +86,9 @@ export function AppLayout({ activePage, account, pageTitle, onNavigate, onLogout
         ))}
 
         <div className="side-status">
-          <span>当前阶段</span>
-          <strong>认证接口已接入</strong>
-          <small>{roleLabel[account.role]} · D1 会话</small>
+          <span>当前账号</span>
+          <strong>{account.displayName}</strong>
+          <small>{roleLabel[account.role]} · 数据已永久存储</small>
         </div>
       </aside>
 
@@ -88,14 +96,14 @@ export function AppLayout({ activePage, account, pageTitle, onNavigate, onLogout
         <div className="page-heading">
           <div>
             <h2>{pageTitle}</h2>
-            <p>当前为正式项目第一阶段骨架，后续逐步接入 D1 数据和真实接口。</p>
+            <p>按权限展示可用功能，所有正式操作会写入存票记录和操作日志。</p>
           </div>
         </div>
         {children}
       </main>
 
       <nav className="bottom-nav" aria-label="手机导航">
-        {primaryNav.slice(0, 4).map((item) => (
+        {primaryNav.filter(visibleNav).slice(0, 4).map((item) => (
           <button
             className={`nav-button ${activePage === item.key ? "active" : ""}`}
             key={item.key}

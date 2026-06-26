@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
-import { listRecords, restoreRecord, voidRecord, type TicketRecord } from "../api";
+import { listRecords, restoreRecord, voidRecord, type Account, type TicketRecord } from "../api";
 import { formatLocalMinute } from "../utils/time";
+import { canWrite } from "../utils/permissions";
 
-export function RecordsPage() {
+type RecordsPageProps = {
+  account: Account;
+};
+
+export function RecordsPage({ account }: RecordsPageProps) {
   const [keyword, setKeyword] = useState("");
   const [type, setType] = useState("");
   const [status, setStatus] = useState("");
@@ -26,6 +31,10 @@ export function RecordsPage() {
   }, []);
 
   async function handleToggle(record: TicketRecord) {
+    if (!canWrite(account)) {
+      setNotice("当前角色不能修改流水状态。");
+      return;
+    }
     const result = record.status === "normal"
       ? await voidRecord(record.id, window.prompt("请输入作废原因") || "")
       : await restoreRecord(record.id);
@@ -55,7 +64,9 @@ export function RecordsPage() {
             <span>{record.type === "deposit" ? "存入" : "取用"}</span>
             <span>{record.type === "deposit" ? "+" : "-"}{record.amount}</span>
             <span>{record.status === "normal" ? "正常" : "作废"}</span>
-            <button className="secondary-button row-action" type="button" onClick={() => handleToggle(record)}>{record.status === "normal" ? "作废" : "恢复"}</button>
+            {canWrite(account) ? (
+              <button className="secondary-button row-action" type="button" onClick={() => handleToggle(record)}>{record.status === "normal" ? "作废" : "恢复"}</button>
+            ) : <span className="muted">只读</span>}
           </div>
         ))}
       </div>

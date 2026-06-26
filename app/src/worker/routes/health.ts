@@ -5,6 +5,6 @@ export function handleHealth() {
     name: "jcc-ticket-lite",
     status: "ok",
     storage: "D1",
-    stage: "formal-project-skeleton"
+    stage: "production-ready-lite"
   });
 }

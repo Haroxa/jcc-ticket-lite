@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
-import { listAuditLogs, type AuditLog } from "../api";
+import { listAuditLogs, type Account, type AuditLog } from "../api";
 import { formatDateTime } from "../utils/time";
 
-export function AuditLogsPage() {
+type AuditLogsPageProps = {
+  account: Account;
+};
+
+export function AuditLogsPage({ account }: AuditLogsPageProps) {
   const [actor, setActor] = useState("");
   const [action, setAction] = useState("");
   const [page, setPage] = useState(1);
@@ -31,7 +35,7 @@ export function AuditLogsPage() {
         <label>操作类型<select value={action} onChange={(event) => setAction(event.target.value)}><option value="">全部类型</option><option value="新增记录">新增记录</option><option value="作废记录">作废记录</option><option value="恢复记录">恢复记录</option><option value="新增存票人">新增存票人</option><option value="修改存票人状态">修改存票人状态</option><option value="登录">登录</option></select></label>
         <div className="filter-actions"><button className="primary-button" type="button" onClick={() => loadLogs(1)}>查询</button></div>
       </div>
-      <p className="filter-summary">管理员查看全部日志，操作员只查看自己的操作。</p>
+      <p className="filter-summary">{account.role === "admin" ? "管理员查看全部日志。" : "操作员只查看自己的操作。"}</p>
       {notice && <p className="notice-text">{notice}</p>}
       <div className="responsive-table audit-table">
         <div className="table-row header"><span>序号</span><span>时间</span><span>操作人</span><span>类型</span><span>对象</span><span>摘要</span></div>
