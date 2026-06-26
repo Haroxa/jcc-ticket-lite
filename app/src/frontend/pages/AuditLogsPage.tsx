@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { listAuditLogs, type AuditLog } from "../api";
+import { formatDateTime } from "../utils/time";
 
 export function AuditLogsPage() {
   const [actor, setActor] = useState("");
@@ -37,7 +38,7 @@ export function AuditLogsPage() {
         {data.items.map((log, index) => (
           <div className="table-row" key={log.id}>
             <span>{(page - 1) * 10 + index + 1}</span>
-            <strong>{log.createdAt.replace("T", " ").slice(0, 16)}</strong>
+            <strong>{formatDateTime(log.createdAt)}</strong>
             <span>{log.actorName}</span>
             <span>{log.action}</span>
             <span>{log.targetType}</span>

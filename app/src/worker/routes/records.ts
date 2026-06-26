@@ -4,6 +4,7 @@ import { getCurrentAccount } from "../services/authService";
 import { randomId } from "../utils/crypto";
 import { readJson } from "../utils/http";
 import { fail, forbidden, ok, unauthorized } from "../utils/response";
+import { chinaDateString } from "../utils/time";
 
 type RecordType = "deposit" | "withdraw";
 type RecordStatus = "normal" | "voided";
@@ -277,7 +278,7 @@ export async function handleRestoreRecord(request: Request, env: Env, recordId: 
 export async function handleDashboard(request: Request, env: Env) {
   const account = await requireAccount(request, env);
   if (!account) return unauthorized();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = chinaDateString();
   const totalBalance = await env.DB.prepare("SELECT COALESCE(SUM(cached_balance), 0) AS value FROM ticket_people").first<{ value: number }>();
   const peopleCount = await env.DB.prepare("SELECT COUNT(*) AS value FROM ticket_people").first<{ value: number }>();
   const todayDeposit = await env.DB.prepare(`

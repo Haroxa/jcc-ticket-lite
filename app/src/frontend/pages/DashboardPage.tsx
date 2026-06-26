@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { PageKey } from "../App";
 import { getDashboard, type TicketRecord } from "../api";
+import { formatLocalMinute } from "../utils/time";
 
 type DashboardPageProps = {
   onNavigate: (page: PageKey) => void;
@@ -50,7 +51,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
             {data?.recent.map((record) => (
               <article className="record-card" key={record.id}>
                 <strong>{record.personName} {record.type === "deposit" ? "存入" : "取用"} {record.amount}</strong>
-                <span>{record.recordedAt.replace("T", " ")} · {record.status === "normal" ? "正常" : "作废"}</span>
+                <span>{formatLocalMinute(record.recordedAt)} · {record.status === "normal" ? "正常" : "作废"}</span>
               </article>
             ))}
           </div>

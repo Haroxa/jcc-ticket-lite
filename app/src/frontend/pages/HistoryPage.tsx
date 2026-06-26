@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { listPeople, listRecords, type Person, type TicketRecord } from "../api";
+import { formatLocalMinute } from "../utils/time";
 
 export function HistoryPage() {
   const [people, setPeople] = useState<Person[]>([]);
@@ -43,7 +44,7 @@ export function HistoryPage() {
         {records.map((record, index) => (
           <div className={`table-row record-row-${record.status}`} key={record.id}>
             <span>{index + 1}</span>
-            <strong>{record.recordedAt.replace("T", " ")}</strong>
+            <strong>{formatLocalMinute(record.recordedAt)}</strong>
             <span>{record.personName}</span>
             <span>{record.type === "deposit" ? "存入" : "取用"}</span>
             <span>{record.type === "deposit" ? "+" : "-"}{record.amount}</span>
