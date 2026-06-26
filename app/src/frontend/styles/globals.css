@@ -18,6 +18,7 @@
 body {
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
   color: var(--text);
   background: var(--bg);
   font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
@@ -56,6 +57,7 @@ textarea { resize: vertical; }
   display: grid;
   grid-template-columns: 228px 1fr;
   grid-template-rows: auto 1fr;
+  min-width: 0;
 }
 .topbar {
   position: sticky;
@@ -154,7 +156,7 @@ textarea { resize: vertical; }
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 .side-status span, .side-status small { color: rgba(220, 231, 228, 0.68); font-size: 12px; }
-.main-content { padding: 22px; min-width: 0; }
+.main-content { padding: 22px; min-width: 0; max-width: 100%; }
 .page-heading {
   display: flex;
   justify-content: space-between;
@@ -187,6 +189,7 @@ textarea { resize: vertical; }
   margin-bottom: 14px;
 }
 .metric-card, .panel {
+  min-width: 0;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -645,7 +648,7 @@ input, select, textarea {
   grid-template-columns: 52px minmax(150px, 1fr) minmax(100px, 0.8fr) minmax(96px, 0.8fr) minmax(88px, 0.8fr) minmax(220px, 1.6fr);
 }
 .accounts-table .table-row {
-  grid-template-columns: 56px minmax(180px, 1.35fr) minmax(88px, 0.65fr) minmax(78px, 0.55fr) minmax(150px, 0.95fr) minmax(150px, 0.95fr) 240px;
+  grid-template-columns: 48px minmax(150px, 1.2fr) minmax(76px, 0.55fr) minmax(68px, 0.45fr) minmax(128px, 0.75fr) minmax(128px, 0.75fr) 218px;
 }
 .accounts-table .table-row > * {
   min-width: 0;
@@ -678,11 +681,11 @@ input, select, textarea {
 .accounts-table .account-cell-actions {
   justify-self: end;
   align-self: center;
-  width: 240px;
+  width: 218px;
 }
 .accounts-table .row-actions.account-cell-actions {
   display: grid;
-  grid-template-columns: 52px 52px 88px;
+  grid-template-columns: 48px 48px 82px;
   justify-content: end;
 }
 .accounts-table .account-cell-actions.muted {
@@ -900,17 +903,17 @@ input, select, textarea {
     grid-template-columns: 52px minmax(150px, 1fr) minmax(110px, 0.8fr) minmax(96px, 0.8fr) minmax(90px, 0.8fr) minmax(240px, 1.6fr);
   }
   .accounts-table .table-row {
-    min-width: 900px;
-    grid-template-columns: minmax(160px, 1.1fr) minmax(82px, 0.55fr) minmax(76px, 0.45fr) minmax(132px, 0.8fr) minmax(132px, 0.8fr) 226px;
+    min-width: 820px;
+    grid-template-columns: minmax(150px, 1.05fr) minmax(72px, 0.45fr) minmax(66px, 0.4fr) minmax(118px, 0.7fr) minmax(118px, 0.7fr) 198px;
   }
   .accounts-table .table-row > span:first-child {
     display: none;
   }
   .accounts-table .account-cell-actions {
-    width: 226px;
+    width: 198px;
   }
   .accounts-table .row-actions.account-cell-actions {
-    grid-template-columns: 50px 50px 84px;
+    grid-template-columns: 44px 44px 76px;
   }
 }
 
@@ -1017,8 +1020,15 @@ input, select, textarea {
     padding: 12px;
   }
   .accounts-table .account-cell-no {
-    grid-column: 1 / -1;
+    grid-column: 1;
+    grid-row: 1;
+    width: max-content;
+    padding: 3px 8px;
+    border-radius: 999px;
+    color: var(--accent-strong);
+    background: var(--surface-soft);
     font-size: 13px;
+    font-weight: 800;
   }
   .accounts-table .account-cell-main {
     grid-column: 1;
@@ -1050,6 +1060,7 @@ input, select, textarea {
   }
   .accounts-table .account-cell-actions {
     grid-column: 1 / -1;
+    grid-row: 6;
     width: 100%;
     justify-self: stretch;
   }
@@ -1058,6 +1069,7 @@ input, select, textarea {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
     align-items: center;
+    justify-content: stretch;
   }
   .accounts-table .row-actions.account-cell-actions::before {
     grid-column: 1 / -1;
