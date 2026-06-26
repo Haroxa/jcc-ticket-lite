@@ -6,16 +6,17 @@ import { canAdmin, canAudit, canWrite } from "../../utils/permissions";
 type NavItem = {
   key: PageKey;
   label: string;
+  shortLabel?: string;
   icon: string;
   require?: "write" | "audit" | "admin";
 };
 
 const primaryNav: NavItem[] = [
   { key: "dashboard", label: "工作台", icon: "⌂" },
-  { key: "entry", label: "快速录入", icon: "＋", require: "write" },
+  { key: "entry", label: "快速录入", shortLabel: "录入", icon: "＋", require: "write" },
   { key: "people", label: "存票人", icon: "◎" },
-  { key: "records", label: "存取记录", icon: "≡" },
-  { key: "history", label: "个人历史", icon: "◷" }
+  { key: "records", label: "存取记录", shortLabel: "记录", icon: "≡" },
+  { key: "history", label: "个人历史", shortLabel: "历史", icon: "◷" }
 ];
 
 const systemNav: NavItem[] = [
@@ -127,7 +128,7 @@ export function AppLayout({ activePage, account, pageTitle, onNavigate, onLogout
             onClick={() => onNavigate(item.key)}
           >
             <span className="nav-icon">{item.icon}</span>
-            {item.label}
+            <span>{item.shortLabel || item.label}</span>
           </button>
         ))}
         <button className="nav-button" type="button" onClick={() => onNavigate("settings")}>

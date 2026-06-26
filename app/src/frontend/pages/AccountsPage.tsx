@@ -135,16 +135,16 @@ export function AccountsPage({ account }: AccountsPageProps) {
           const isAdmin = item.role === "admin";
           return (
             <div className={`table-row account-status-${item.status} ${isAdmin ? "account-admin-row" : ""}`} key={item.id}>
-              <span className="row-no">{(page - 1) * 10 + index + 1}</span>
-              <strong>{item.displayName}<small>{item.username}</small></strong>
-              <span>{roleLabel[item.role]}</span>
-              <span className="status-pill">{statusLabel[item.status]}</span>
-              <span>{item.lastLoginAt ? formatDateTime(item.lastLoginAt) : "未登录"}</span>
-              <span>{formatDateTime(item.updatedAt)}</span>
+              <span className="row-no account-cell-no" data-label="序号">{(page - 1) * 10 + index + 1}</span>
+              <strong className="account-cell-main" data-label="账号">{item.displayName}<small>{item.username}</small></strong>
+              <span className="account-cell-role" data-label="角色">{roleLabel[item.role]}</span>
+              <span className="account-cell-status" data-label="状态"><span className="status-pill">{statusLabel[item.status]}</span></span>
+              <span className="account-cell-login" data-label="最近登录">{item.lastLoginAt ? formatDateTime(item.lastLoginAt) : "未登录"}</span>
+              <span className="account-cell-updated" data-label="更新时间">{formatDateTime(item.updatedAt)}</span>
               {isAdmin ? (
-                <span className="muted">系统唯一管理员</span>
+                <span className="muted account-cell-actions" data-label="操作">系统唯一管理员</span>
               ) : (
-                <div className="row-actions">
+                <div className="row-actions account-cell-actions" data-label="操作">
                   <button className="secondary-button row-action" type="button" onClick={() => setModal({ type: "edit", account: item })}>编辑</button>
                   <button className="secondary-button row-action" disabled={item.id === account.id} type="button" onClick={() => setModal({ type: "status", account: item })}>{item.status === "active" ? "停用" : "启用"}</button>
                   <button className="secondary-button row-action" type="button" onClick={() => setModal({ type: "password", account: item })}>重置密码</button>
