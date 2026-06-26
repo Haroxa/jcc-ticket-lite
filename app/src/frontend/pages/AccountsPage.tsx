@@ -10,6 +10,8 @@ import {
 } from "../api";
 import { formatDateTime } from "../utils/time";
 
+type ManagedRole = Exclude<Account["role"], "admin">;
+
 const roleLabel: Record<Account["role"], string> = {
   admin: "管理员",
   operator: "操作员",
@@ -20,6 +22,13 @@ const statusLabel: Record<ManagedAccount["status"], string> = {
   active: "启用",
   disabled: "停用"
 };
+
+type AccountModal =
+  | { type: "create" }
+  | { type: "edit"; account: ManagedAccount }
+  | { type: "status"; account: ManagedAccount }
+  | { type: "password"; account: ManagedAccount }
+  | null;
 
 type AccountsPageProps = {
   account: Account;
@@ -32,10 +41,7 @@ export function AccountsPage({ account }: AccountsPageProps) {
   const [page, setPage] = useState(1);
   const [data, setData] = useState<{ items: ManagedAccount[]; total: number; totalPages: number }>({ items: [], total: 0, totalPages: 1 });
   const [notice, setNotice] = useState("");
-  const [newUsername, setNewUsername] = useState("");
-  const [newDisplayName, setNewDisplayName] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [newRole, setNewRole] = useState<Account["role"]>("operator");
+  const [modal, setModal] = useState<AccountModal>(null);
 
   async function loadAccounts(nextPage = page) {
     const result = await listAccounts({ keyword, role, status, page: nextPage, pageSize: 10 });
@@ -52,64 +58,50 @@ export function AccountsPage({ account }: AccountsPageProps) {
     void loadAccounts(1);
   }, []);
 
-  async function handleCreate() {
-    if (!newUsername.trim() || !newDisplayName.trim() || !newPassword) {
-      setNotice("请输入用户名、显示名称和初始密码。");
-      return;
-    }
-    const result = await createAccount({
-      username: newUsername,
-      displayName: newDisplayName,
-      password: newPassword,
-      role: newRole
-    });
+  function closeModal() {
+    setModal(null);
+  }
+
+  async function submitCreate(payload: { username: string; displayName: string; password: string; role: ManagedRole }) {
+    const result = await createAccount(payload);
     if (!result.ok) {
       setNotice(result.message);
       return;
     }
-    setNewUsername("");
-    setNewDisplayName("");
-    setNewPassword("");
-    setNewRole("operator");
+    closeModal();
     await loadAccounts(1);
   }
 
-  async function handleEdit(item: ManagedAccount) {
-    const displayName = window.prompt("显示名称", item.displayName);
-    if (!displayName) return;
-    const nextRole = window.prompt("角色：admin / operator / viewer", item.role);
-    if (!nextRole || !["admin", "operator", "viewer"].includes(nextRole)) return;
-    const result = await updateAccount(item.id, { displayName, role: nextRole as Account["role"] });
+  async function submitEdit(item: ManagedAccount, payload: { displayName: string; role: ManagedRole }) {
+    const result = await updateAccount(item.id, payload);
     if (!result.ok) {
       setNotice(result.message);
       return;
     }
+    closeModal();
     await loadAccounts(page);
   }
 
-  async function handleStatus(item: ManagedAccount) {
+  async function submitStatus(item: ManagedAccount, reason: string) {
     const nextStatus = item.status === "active" ? "disabled" : "active";
-    const reason = window.prompt(`${nextStatus === "active" ? "启用" : "停用"} ${item.displayName} 的原因`);
-    if (!reason) return;
     const result = await changeAccountStatus(item.id, nextStatus, reason);
     if (!result.ok) {
       setNotice(result.message);
       return;
     }
+    closeModal();
     await loadAccounts(page);
   }
 
-  async function handlePassword(item: ManagedAccount) {
-    const password = window.prompt(`请输入 ${item.displayName} 的新密码，至少 8 位`);
-    if (!password) return;
-    const reason = window.prompt("请输入重置原因");
-    if (!reason) return;
+  async function submitPassword(item: ManagedAccount, password: string, reason: string) {
     const result = await resetAccountPassword(item.id, password, reason);
     if (!result.ok) {
       setNotice(result.message);
       return;
     }
+    closeModal();
     setNotice("密码已重置，该账号需要重新登录。");
+    await loadAccounts(page);
   }
 
   return (
@@ -123,34 +115,36 @@ export function AccountsPage({ account }: AccountsPageProps) {
         </div>
       </div>
 
-      <div className="inline-create account-create">
-        <label>用户名<input value={newUsername} onChange={(event) => setNewUsername(event.target.value)} placeholder="用于登录，例如 zhangsan" /></label>
-        <label>显示名称<input value={newDisplayName} onChange={(event) => setNewDisplayName(event.target.value)} placeholder="页面展示名称" /></label>
-        <label>初始密码<input value={newPassword} onChange={(event) => setNewPassword(event.target.value)} type="password" placeholder="至少 8 位" /></label>
-        <label>角色<select value={newRole} onChange={(event) => setNewRole(event.target.value as Account["role"])}><option value="operator">操作员</option><option value="viewer">只读成员</option><option value="admin">管理员</option></select></label>
-        <button className="secondary-button" type="button" onClick={handleCreate}>新增账号</button>
+      <div className="account-toolbar">
+        <p className="filter-summary">管理员账号固定为唯一系统账号，不在此处修改；这里用于维护操作员和只读成员。</p>
+        <button className="primary-button" type="button" onClick={() => setModal({ type: "create" })}>新增账号</button>
       </div>
-
-      <p className="filter-summary">管理员可新增成员、调整角色、停用账号和重置密码；停用账号会立即退出已登录会话。</p>
       {notice && <p className="notice-text">{notice}</p>}
 
       <div className="responsive-table accounts-table">
         <div className="table-row header"><span>序号</span><span>账号</span><span>角色</span><span>状态</span><span>最近登录</span><span>更新时间</span><span>操作</span></div>
-        {data.items.map((item, index) => (
-          <div className={`table-row account-status-${item.status}`} key={item.id}>
-            <span className="row-no">{(page - 1) * 10 + index + 1}</span>
-            <strong>{item.displayName}<small>{item.username}</small></strong>
-            <span>{roleLabel[item.role]}</span>
-            <span className="status-pill">{statusLabel[item.status]}</span>
-            <span>{item.lastLoginAt ? formatDateTime(item.lastLoginAt) : "未登录"}</span>
-            <span>{formatDateTime(item.updatedAt)}</span>
-            <div className="row-actions">
-              <button className="secondary-button row-action" type="button" onClick={() => handleEdit(item)}>编辑</button>
-              <button className="secondary-button row-action" disabled={item.id === account.id} type="button" onClick={() => handleStatus(item)}>{item.status === "active" ? "停用" : "启用"}</button>
-              <button className="secondary-button row-action" type="button" onClick={() => handlePassword(item)}>重置密码</button>
+        {data.items.map((item, index) => {
+          const isAdmin = item.role === "admin";
+          return (
+            <div className={`table-row account-status-${item.status} ${isAdmin ? "account-admin-row" : ""}`} key={item.id}>
+              <span className="row-no">{(page - 1) * 10 + index + 1}</span>
+              <strong>{item.displayName}<small>{item.username}</small></strong>
+              <span>{roleLabel[item.role]}</span>
+              <span className="status-pill">{statusLabel[item.status]}</span>
+              <span>{item.lastLoginAt ? formatDateTime(item.lastLoginAt) : "未登录"}</span>
+              <span>{formatDateTime(item.updatedAt)}</span>
+              {isAdmin ? (
+                <span className="muted">系统唯一管理员</span>
+              ) : (
+                <div className="row-actions">
+                  <button className="secondary-button row-action" type="button" onClick={() => setModal({ type: "edit", account: item })}>编辑</button>
+                  <button className="secondary-button row-action" disabled={item.id === account.id} type="button" onClick={() => setModal({ type: "status", account: item })}>{item.status === "active" ? "停用" : "启用"}</button>
+                  <button className="secondary-button row-action" type="button" onClick={() => setModal({ type: "password", account: item })}>重置密码</button>
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="pagination-bar">
@@ -158,6 +152,109 @@ export function AccountsPage({ account }: AccountsPageProps) {
         <span>第 {page} / {data.totalPages} 页，共 {data.total} 个账号</span>
         <button type="button" disabled={page >= data.totalPages} onClick={() => loadAccounts(page + 1)}>下一页</button>
       </div>
+
+      {modal?.type === "create" && <AccountCreateModal onCancel={closeModal} onSubmit={submitCreate} />}
+      {modal?.type === "edit" && <AccountEditModal account={modal.account} onCancel={closeModal} onSubmit={submitEdit} />}
+      {modal?.type === "status" && <AccountStatusModal account={modal.account} onCancel={closeModal} onSubmit={submitStatus} />}
+      {modal?.type === "password" && <AccountPasswordModal account={modal.account} onCancel={closeModal} onSubmit={submitPassword} />}
     </section>
+  );
+}
+
+function AccountCreateModal({ onCancel, onSubmit }: {
+  onCancel: () => void;
+  onSubmit: (payload: { username: string; displayName: string; password: string; role: ManagedRole }) => void;
+}) {
+  const [username, setUsername] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState<ManagedRole>("operator");
+
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="accountCreateTitle">
+        <h3 id="accountCreateTitle">新增账号</h3>
+        <p className="muted">管理员账号固定唯一；新成员只能设置为操作员或只读成员。</p>
+        <label>用户名<input value={username} onChange={(event) => setUsername(event.target.value)} placeholder="用于登录，例如 zhangsan" /></label>
+        <label>显示名称<input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="页面展示名称" /></label>
+        <label>初始密码<input value={password} onChange={(event) => setPassword(event.target.value)} type="password" placeholder="至少 8 位" /></label>
+        <label>角色<select value={role} onChange={(event) => setRole(event.target.value as ManagedRole)}><option value="operator">操作员</option><option value="viewer">只读成员</option></select></label>
+        <div className="button-row modal-actions">
+          <button className="secondary-button" type="button" onClick={onCancel}>取消</button>
+          <button className="primary-button" type="button" onClick={() => onSubmit({ username, displayName, password, role })}>保存账号</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function AccountEditModal({ account, onCancel, onSubmit }: {
+  account: ManagedAccount;
+  onCancel: () => void;
+  onSubmit: (account: ManagedAccount, payload: { displayName: string; role: ManagedRole }) => void;
+}) {
+  const [displayName, setDisplayName] = useState(account.displayName);
+  const [role, setRole] = useState<ManagedRole>(account.role === "viewer" ? "viewer" : "operator");
+
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="accountEditTitle">
+        <h3 id="accountEditTitle">编辑账号</h3>
+        <p className="muted">{account.username}</p>
+        <label>显示名称<input value={displayName} onChange={(event) => setDisplayName(event.target.value)} /></label>
+        <label>角色<select value={role} onChange={(event) => setRole(event.target.value as ManagedRole)}><option value="operator">操作员</option><option value="viewer">只读成员</option></select></label>
+        <div className="button-row modal-actions">
+          <button className="secondary-button" type="button" onClick={onCancel}>取消</button>
+          <button className="primary-button" type="button" onClick={() => onSubmit(account, { displayName, role })}>保存修改</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function AccountStatusModal({ account, onCancel, onSubmit }: {
+  account: ManagedAccount;
+  onCancel: () => void;
+  onSubmit: (account: ManagedAccount, reason: string) => void;
+}) {
+  const [reason, setReason] = useState("");
+  const nextText = account.status === "active" ? "停用" : "启用";
+
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="accountStatusTitle">
+        <h3 id="accountStatusTitle">{nextText}账号</h3>
+        <p className="muted">{nextText} {account.displayName}（{account.username}）。停用后该账号会立即退出已登录会话。</p>
+        <label>操作原因<textarea value={reason} onChange={(event) => setReason(event.target.value)} rows={3} placeholder="请输入原因" /></label>
+        <div className="button-row modal-actions">
+          <button className="secondary-button" type="button" onClick={onCancel}>取消</button>
+          <button className="primary-button" type="button" onClick={() => onSubmit(account, reason)}>确认{nextText}</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function AccountPasswordModal({ account, onCancel, onSubmit }: {
+  account: ManagedAccount;
+  onCancel: () => void;
+  onSubmit: (account: ManagedAccount, password: string, reason: string) => void;
+}) {
+  const [password, setPassword] = useState("");
+  const [reason, setReason] = useState("");
+
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="accountPasswordTitle">
+        <h3 id="accountPasswordTitle">重置密码</h3>
+        <p className="muted">为 {account.displayName}（{account.username}）设置新密码，保存后需要重新登录。</p>
+        <label>新密码<input value={password} onChange={(event) => setPassword(event.target.value)} type="password" placeholder="至少 8 位" /></label>
+        <label>重置原因<textarea value={reason} onChange={(event) => setReason(event.target.value)} rows={3} placeholder="请输入原因" /></label>
+        <div className="button-row modal-actions">
+          <button className="secondary-button" type="button" onClick={onCancel}>取消</button>
+          <button className="primary-button" type="button" onClick={() => onSubmit(account, password, reason)}>确认重置</button>
+        </div>
+      </section>
+    </div>
   );
 }

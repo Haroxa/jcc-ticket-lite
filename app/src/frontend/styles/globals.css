@@ -475,6 +475,16 @@ input, select, textarea {
 .account-create {
   grid-template-columns: repeat(4, minmax(150px, 1fr)) auto;
 }
+.account-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+.account-toolbar .filter-summary {
+  margin: 0;
+}
 .responsive-table { display: grid; gap: 10px; margin-top: 12px; }
 .table-row {
   display: grid;
@@ -588,6 +598,10 @@ input, select, textarea {
   color: var(--muted);
   background: #eef0ef;
 }
+.account-admin-row {
+  border-left: 4px solid var(--accent);
+  background: rgba(15, 118, 110, 0.04);
+}
 .table-row.deposit { border-left: 4px solid var(--green); }
 .table-row.withdraw { border-left: 4px solid var(--amber); }
 .table-row.header { border-left-width: 1px; }
@@ -614,6 +628,36 @@ input, select, textarea {
 .pagination-bar button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(10, 20, 18, 0.42);
+}
+.modal-card {
+  width: min(480px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.modal-card h3,
+.modal-card p {
+  margin: 0;
+}
+.modal-actions {
+  justify-content: flex-end;
+}
+.modal-actions .primary-button,
+.modal-actions .secondary-button {
+  min-width: 96px;
 }
 .bottom-nav { display: none; }
 .public-shell {
@@ -732,6 +776,13 @@ input, select, textarea {
   .metric-card strong { font-size: 24px; }
   .panel { padding: 12px; }
   .filter-panel { grid-template-columns: 1fr; }
+  .account-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .account-toolbar .primary-button {
+    width: 100%;
+  }
   .filter-actions,
   .filter-actions .primary-button,
   .filter-actions .secondary-button {

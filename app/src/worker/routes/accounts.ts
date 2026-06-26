@@ -36,6 +36,7 @@ type PasswordPayload = {
 };
 
 const roles = new Set<AccountRole>(["admin", "operator", "viewer"]);
+const managedRoles = new Set<AccountRole>(["operator", "viewer"]);
 const statuses = new Set<AccountStatus>(["active", "disabled"]);
 
 function mapAccount(row: AccountRow) {
@@ -77,21 +78,6 @@ async function getAccount(env: Env, accountId: string) {
     GROUP BY accounts.id
     LIMIT 1
   `).bind(accountId).first<AccountRow>();
-}
-
-async function activeAdminCount(env: Env) {
-  const row = await env.DB.prepare(`
-    SELECT COUNT(*) AS count
-    FROM accounts
-    WHERE role = 'admin' AND status = 'active'
-  `).first<{ count: number }>();
-  return row?.count || 0;
-}
-
-async function assertCanReduceAdmin(env: Env, current: AccountRow) {
-  if (current.role !== "admin" || current.status !== "active") return null;
-  if (await activeAdminCount(env) <= 1) return "至少需要保留一个启用的管理员账号";
-  return null;
 }
 
 export async function handleAccounts(request: Request, env: Env) {
@@ -176,6 +162,7 @@ async function createAccount(request: Request, env: Env, actor: SessionAccount) 
   if (!/^[A-Za-z0-9_.-]{3,32}$/.test(username)) return fail("用户名仅支持 3-32 位字母、数字、下划线、点和短横线");
   if (payload.password.length < 8) return fail("密码至少需要 8 位");
   if (!roles.has(role)) return fail("角色不正确");
+  if (!managedRoles.has(role)) return fail("管理员账号仅支持初始化创建，不能在账号管理中新增");
 
   const now = new Date().toISOString();
   const id = randomId("acc");
@@ -204,13 +191,11 @@ export async function handleAccountDetail(request: Request, env: Env, accountId:
   const role = payload?.role;
   if (!displayName || !role) return fail("显示名称和角色不能为空");
   if (!roles.has(role)) return fail("角色不正确");
+  if (!managedRoles.has(role)) return fail("管理员账号不支持在账号管理中创建或调整");
 
   const current = await getAccount(env, accountId);
   if (!current) return fail("账号不存在", 404);
-  if (current.role === "admin" && role !== "admin") {
-    const message = await assertCanReduceAdmin(env, current);
-    if (message) return fail(message, 409);
-  }
+  if (current.role === "admin") return fail("管理员账号不支持修改", 409);
 
   const now = new Date().toISOString();
   await env.DB.prepare(`
@@ -247,11 +232,8 @@ export async function handleAccountStatus(request: Request, env: Env, accountId:
 
   const current = await getAccount(env, accountId);
   if (!current) return fail("账号不存在", 404);
+  if (current.role === "admin") return fail("管理员账号不支持停用或启用", 409);
   if (current.status === payload.status) return ok({ account: mapAccount(current), changed: false });
-  if (payload.status === "disabled") {
-    const message = await assertCanReduceAdmin(env, current);
-    if (message) return fail(message, 409);
-  }
 
   const now = new Date().toISOString();
   await env.DB.prepare(`
@@ -292,6 +274,7 @@ export async function handleAccountPassword(request: Request, env: Env, accountI
 
   const current = await getAccount(env, accountId);
   if (!current) return fail("账号不存在", 404);
+  if (current.role === "admin") return fail("管理员账号不支持重置密码，请通过专门维护流程处理", 409);
   const now = new Date().toISOString();
   await env.DB.prepare(`
     UPDATE accounts
