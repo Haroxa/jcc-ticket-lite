@@ -86,6 +86,12 @@ export function HistoryPage() {
 
   const selectedPerson = people.find((person) => person.id === personId);
   const statusLabel = selectedPerson?.status === "normal" ? "正常" : selectedPerson?.status === "disabled" ? "停用" : selectedPerson?.status === "blocked" ? "拉黑" : "未选择";
+  const activeFilters = [
+    selectedPerson ? selectedPerson.name : "未选择存票人",
+    dateFrom || dateTo ? `${dateFrom || "不限"} 至 ${dateTo || "不限"}` : "",
+    type === "deposit" ? "存入" : type === "withdraw" ? "取用" : "",
+    status === "normal" ? "正常" : status === "voided" ? "作废" : ""
+  ].filter(Boolean).join(" / ");
 
   return (
     <section className="panel">
@@ -110,7 +116,7 @@ export function HistoryPage() {
         <button className="ghost-button" type="button" onClick={() => setDatePreset("today")}>今日</button>
         <button className="ghost-button" type="button" onClick={() => setDatePreset("week")}>近 7 天</button>
       </div>
-      <p className="filter-summary">个人历史用于核对单个存票人的余额变化；当前筛选共 {data.total} 条。</p>
+      <p className="filter-summary">当前查看：{activeFilters}，共 {data.total} 条记录。</p>
       <section className="history-profile">
         <div>
           <span>存票人</span>
@@ -131,9 +137,9 @@ export function HistoryPage() {
       </section>
       <div className="history-summary-grid">
         <article className="metric-card"><span>当前余额</span><strong>{selectedPerson?.balance ?? 0}</strong></article>
-        <article className="metric-card"><span>筛选存入</span><strong>{data.summary.depositTotal}</strong></article>
-        <article className="metric-card"><span>筛选取用</span><strong>{data.summary.withdrawTotal}</strong></article>
-        <article className="metric-card"><span>筛选净变化</span><strong>{data.summary.netTotal}</strong></article>
+        <article className="metric-card"><span>存入合计</span><strong>{data.summary.depositTotal}</strong></article>
+        <article className="metric-card"><span>取用合计</span><strong>{data.summary.withdrawTotal}</strong></article>
+        <article className="metric-card"><span>净变化</span><strong>{data.summary.netTotal}</strong></article>
         <article className="metric-card"><span>有效 / 作废</span><strong>{data.summary.normalCount} / {data.summary.voidedCount}</strong></article>
       </div>
       {notice && <p className="notice-text">{notice}</p>}

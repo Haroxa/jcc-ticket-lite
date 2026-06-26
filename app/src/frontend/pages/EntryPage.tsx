@@ -58,7 +58,7 @@ export function EntryPage({ account }: EntryPageProps) {
       return;
     }
     const result = await listRecords({ personId: nextPersonId, page: 1, pageSize: 5 });
-    if (result.ok) setRecentRecords(result.data.items);
+    if (result.ok) setRecentRecords(result.data.items.slice(0, 3));
   }
 
   function selectPerson(person: Person) {
@@ -166,7 +166,7 @@ export function EntryPage({ account }: EntryPageProps) {
           <small>只显示正常状态存票人；停用和拉黑不可录入。</small>
         </div>
         <div className="person-recent-block">
-          <div className="panel-header compact"><h3>最近操作</h3><span>最近 5 条</span></div>
+          <div className="panel-header compact"><h3>最近操作</h3><span>最近 3 条</span></div>
           <div className="person-recent-list">
             {recentRecords.map((record) => (
               <article className={`recent-record-card ${record.type} ${record.status === "voided" ? "voided" : ""}`} key={record.id}>
