@@ -23,6 +23,14 @@ const statusLabel: Record<ManagedAccount["status"], string> = {
   disabled: "停用"
 };
 
+function validateUsername(value: string) {
+  return /^[A-Za-z0-9_.-]{3,32}$/.test(value);
+}
+
+function validatePassword(value: string) {
+  return value.length >= 8;
+}
+
 type AccountModal =
   | { type: "create" }
   | { type: "edit"; account: ManagedAccount }
@@ -168,20 +176,50 @@ function AccountCreateModal({ onCancel, onSubmit }: {
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<ManagedRole>("operator");
+  const [error, setError] = useState("");
+
+  function handleSubmit() {
+    if (!validateUsername(username.trim())) {
+      setError("用户名需为 3-32 位，只能包含字母、数字、下划线、点和短横线。");
+      return;
+    }
+    if (!displayName.trim()) {
+      setError("请输入显示名称。");
+      return;
+    }
+    if (!validatePassword(password)) {
+      setError("初始密码至少需要 8 位。");
+      return;
+    }
+    onSubmit({ username: username.trim(), displayName: displayName.trim(), password, role });
+  }
 
   return (
     <div className="modal-backdrop" role="presentation">
       <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="accountCreateTitle">
         <h3 id="accountCreateTitle">新增账号</h3>
         <p className="muted">管理员账号固定唯一；新成员只能设置为操作员或只读成员。</p>
-        <label>用户名<input value={username} onChange={(event) => setUsername(event.target.value)} placeholder="用于登录，例如 zhangsan" /></label>
-        <label>显示名称<input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="页面展示名称" /></label>
-        <label>初始密码<input value={password} onChange={(event) => setPassword(event.target.value)} type="password" placeholder="至少 8 位" /></label>
+        <div className="autocomplete-decoy" aria-hidden="true">
+          <input autoComplete="username" tabIndex={-1} />
+          <input autoComplete="current-password" tabIndex={-1} type="password" />
+        </div>
+        <label>用户名<input autoComplete="off" name="new-member-login-name" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="用于登录，例如 zhangsan" /></label>
+        <p className="field-hint">3-32 位；支持字母、数字、下划线、点和短横线。</p>
+        <label>显示名称<input autoComplete="off" name="new-member-display-name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="页面展示名称" /></label>
+        <label>初始密码
+          <div className="password-field">
+            <input autoComplete="new-password" name="new-member-password" value={password} onChange={(event) => setPassword(event.target.value)} type={showPassword ? "text" : "password"} placeholder="至少 8 位" />
+            <button className="secondary-button" type="button" onClick={() => setShowPassword((value) => !value)}>{showPassword ? "隐藏" : "显示"}</button>
+          </div>
+        </label>
+        <p className="field-hint">建议使用 8 位以上、包含字母和数字的临时密码，创建后由成员妥善保存。</p>
         <label>角色<select value={role} onChange={(event) => setRole(event.target.value as ManagedRole)}><option value="operator">操作员</option><option value="viewer">只读成员</option></select></label>
+        {error && <p className="notice-text">{error}</p>}
         <div className="button-row modal-actions">
           <button className="secondary-button" type="button" onClick={onCancel}>取消</button>
-          <button className="primary-button" type="button" onClick={() => onSubmit({ username, displayName, password, role })}>保存账号</button>
+          <button className="primary-button" type="button" onClick={handleSubmit}>保存账号</button>
         </div>
       </section>
     </div>
@@ -195,17 +233,27 @@ function AccountEditModal({ account, onCancel, onSubmit }: {
 }) {
   const [displayName, setDisplayName] = useState(account.displayName);
   const [role, setRole] = useState<ManagedRole>(account.role === "viewer" ? "viewer" : "operator");
+  const [error, setError] = useState("");
+
+  function handleSubmit() {
+    if (!displayName.trim()) {
+      setError("请输入显示名称。");
+      return;
+    }
+    onSubmit(account, { displayName: displayName.trim(), role });
+  }
 
   return (
     <div className="modal-backdrop" role="presentation">
       <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="accountEditTitle">
         <h3 id="accountEditTitle">编辑账号</h3>
         <p className="muted">{account.username}</p>
-        <label>显示名称<input value={displayName} onChange={(event) => setDisplayName(event.target.value)} /></label>
+        <label>显示名称<input autoComplete="off" value={displayName} onChange={(event) => setDisplayName(event.target.value)} /></label>
         <label>角色<select value={role} onChange={(event) => setRole(event.target.value as ManagedRole)}><option value="operator">操作员</option><option value="viewer">只读成员</option></select></label>
+        {error && <p className="notice-text">{error}</p>}
         <div className="button-row modal-actions">
           <button className="secondary-button" type="button" onClick={onCancel}>取消</button>
-          <button className="primary-button" type="button" onClick={() => onSubmit(account, { displayName, role })}>保存修改</button>
+          <button className="primary-button" type="button" onClick={handleSubmit}>保存修改</button>
         </div>
       </section>
     </div>
@@ -218,7 +266,16 @@ function AccountStatusModal({ account, onCancel, onSubmit }: {
   onSubmit: (account: ManagedAccount, reason: string) => void;
 }) {
   const [reason, setReason] = useState("");
+  const [error, setError] = useState("");
   const nextText = account.status === "active" ? "停用" : "启用";
+
+  function handleSubmit() {
+    if (!reason.trim()) {
+      setError("请输入操作原因。");
+      return;
+    }
+    onSubmit(account, reason.trim());
+  }
 
   return (
     <div className="modal-backdrop" role="presentation">
@@ -226,9 +283,10 @@ function AccountStatusModal({ account, onCancel, onSubmit }: {
         <h3 id="accountStatusTitle">{nextText}账号</h3>
         <p className="muted">{nextText} {account.displayName}（{account.username}）。停用后该账号会立即退出已登录会话。</p>
         <label>操作原因<textarea value={reason} onChange={(event) => setReason(event.target.value)} rows={3} placeholder="请输入原因" /></label>
+        {error && <p className="notice-text">{error}</p>}
         <div className="button-row modal-actions">
           <button className="secondary-button" type="button" onClick={onCancel}>取消</button>
-          <button className="primary-button" type="button" onClick={() => onSubmit(account, reason)}>确认{nextText}</button>
+          <button className="primary-button" type="button" onClick={handleSubmit}>确认{nextText}</button>
         </div>
       </section>
     </div>
@@ -242,17 +300,41 @@ function AccountPasswordModal({ account, onCancel, onSubmit }: {
 }) {
   const [password, setPassword] = useState("");
   const [reason, setReason] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+
+  function handleSubmit() {
+    if (!validatePassword(password)) {
+      setError("新密码至少需要 8 位。");
+      return;
+    }
+    if (!reason.trim()) {
+      setError("请输入重置原因。");
+      return;
+    }
+    onSubmit(account, password, reason.trim());
+  }
 
   return (
     <div className="modal-backdrop" role="presentation">
       <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="accountPasswordTitle">
         <h3 id="accountPasswordTitle">重置密码</h3>
         <p className="muted">为 {account.displayName}（{account.username}）设置新密码，保存后需要重新登录。</p>
-        <label>新密码<input value={password} onChange={(event) => setPassword(event.target.value)} type="password" placeholder="至少 8 位" /></label>
+        <div className="autocomplete-decoy" aria-hidden="true">
+          <input autoComplete="username" tabIndex={-1} />
+          <input autoComplete="current-password" tabIndex={-1} type="password" />
+        </div>
+        <label>新密码
+          <div className="password-field">
+            <input autoComplete="new-password" name="reset-member-password" value={password} onChange={(event) => setPassword(event.target.value)} type={showPassword ? "text" : "password"} placeholder="至少 8 位" />
+            <button className="secondary-button" type="button" onClick={() => setShowPassword((value) => !value)}>{showPassword ? "隐藏" : "显示"}</button>
+          </div>
+        </label>
         <label>重置原因<textarea value={reason} onChange={(event) => setReason(event.target.value)} rows={3} placeholder="请输入原因" /></label>
+        {error && <p className="notice-text">{error}</p>}
         <div className="button-row modal-actions">
           <button className="secondary-button" type="button" onClick={onCancel}>取消</button>
-          <button className="primary-button" type="button" onClick={() => onSubmit(account, password, reason)}>确认重置</button>
+          <button className="primary-button" type="button" onClick={handleSubmit}>确认重置</button>
         </div>
       </section>
     </div>

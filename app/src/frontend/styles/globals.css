@@ -465,6 +465,30 @@ input, select, textarea {
   color: #b42318;
   font-size: 14px;
 }
+.field-hint {
+  margin: -6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.password-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 76px;
+  gap: 8px;
+}
+.password-field .secondary-button {
+  min-height: 42px;
+  padding: 0 10px;
+}
+.autocomplete-decoy {
+  position: fixed;
+  left: -10000px;
+  top: -10000px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
 .inline-create {
   display: grid;
   grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto;
