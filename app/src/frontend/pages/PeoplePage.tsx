@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { changePersonStatus, createPerson, listPeople, updatePerson, type Account, type Person, type PersonStatus } from "../api";
+import { Pagination } from "../components/Pagination/Pagination";
 import { canAdmin } from "../utils/permissions";
 
 const statusLabel: Record<PersonStatus, string> = {
@@ -16,13 +17,14 @@ export function PeoplePage({ account }: PeoplePageProps) {
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [data, setData] = useState<{ items: Person[]; total: number; totalPages: number }>({ items: [], total: 0, totalPages: 1 });
   const [notice, setNotice] = useState("");
   const [newName, setNewName] = useState("");
   const [newNote, setNewNote] = useState("");
 
   async function loadPeople(nextPage = page) {
-    const result = await listPeople({ keyword, status, page: nextPage, pageSize: 10 });
+    const result = await listPeople({ keyword, status, page: nextPage, pageSize });
     if (!result.ok) {
       setNotice(result.message);
       return;
@@ -104,7 +106,7 @@ export function PeoplePage({ account }: PeoplePageProps) {
         <div className="table-row header"><span>序号</span><span>存票人</span><span>余额</span><span>状态</span><span>备注</span><span>操作</span></div>
         {data.items.map((person, index) => (
           <div className={`table-row person-status-${person.status}`} key={person.id}>
-            <span className="row-no">{(page - 1) * 10 + index + 1}</span>
+            <span className="row-no">{(page - 1) * pageSize + index + 1}</span>
             <strong>{person.name}</strong>
             <span>{person.balance}</span>
             <span className="status-pill">{statusLabel[person.status]}</span>
@@ -118,11 +120,15 @@ export function PeoplePage({ account }: PeoplePageProps) {
           </div>
         ))}
       </div>
-      <div className="pagination-bar">
-        <button type="button" disabled={page <= 1} onClick={() => loadPeople(page - 1)}>上一页</button>
-        <span>第 {page} / {data.totalPages} 页，共 {data.total} 人</span>
-        <button type="button" disabled={page >= data.totalPages} onClick={() => loadPeople(page + 1)}>下一页</button>
-      </div>
+      <Pagination
+        page={page}
+        totalPages={data.totalPages}
+        total={data.total}
+        pageSize={pageSize}
+        totalLabel="人"
+        onPageChange={(nextPage) => loadPeople(nextPage)}
+        onPageSizeChange={(nextPageSize) => { setPageSize(nextPageSize); void listPeople({ keyword, status, page: 1, pageSize: nextPageSize }).then((result) => { if (result.ok) { setData({ items: result.data.items, total: result.data.total, totalPages: result.data.totalPages }); setPage(result.data.page); setNotice(""); } else setNotice(result.message); }); }}
+      />
     </section>
   );
 }

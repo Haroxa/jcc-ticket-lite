@@ -8,6 +8,7 @@ import {
   type Account,
   type ManagedAccount
 } from "../api";
+import { Pagination } from "../components/Pagination/Pagination";
 import { formatDateTime } from "../utils/time";
 
 type ManagedRole = Exclude<Account["role"], "admin">;
@@ -47,12 +48,13 @@ export function AccountsPage({ account }: AccountsPageProps) {
   const [role, setRole] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [data, setData] = useState<{ items: ManagedAccount[]; total: number; totalPages: number }>({ items: [], total: 0, totalPages: 1 });
   const [notice, setNotice] = useState("");
   const [modal, setModal] = useState<AccountModal>(null);
 
   async function loadAccounts(nextPage = page) {
-    const result = await listAccounts({ keyword, role, status, page: nextPage, pageSize: 10 });
+    const result = await listAccounts({ keyword, role, status, page: nextPage, pageSize });
     if (!result.ok) {
       setNotice(result.message);
       return;
@@ -135,7 +137,7 @@ export function AccountsPage({ account }: AccountsPageProps) {
           const isAdmin = item.role === "admin";
           return (
             <div className={`table-row account-status-${item.status} ${isAdmin ? "account-admin-row" : ""}`} key={item.id}>
-              <span className="row-no account-cell-no" data-label="序号">{(page - 1) * 10 + index + 1}</span>
+              <span className="row-no account-cell-no" data-label="序号">{(page - 1) * pageSize + index + 1}</span>
               <strong className="account-cell-main" data-label="账号">{item.displayName}<small>{item.username}</small></strong>
               <span className="account-cell-role" data-label="角色">{roleLabel[item.role]}</span>
               <span className="account-cell-status" data-label="状态"><span className="status-pill">{statusLabel[item.status]}</span></span>
@@ -155,11 +157,15 @@ export function AccountsPage({ account }: AccountsPageProps) {
         })}
       </div>
 
-      <div className="pagination-bar">
-        <button type="button" disabled={page <= 1} onClick={() => loadAccounts(page - 1)}>上一页</button>
-        <span>第 {page} / {data.totalPages} 页，共 {data.total} 个账号</span>
-        <button type="button" disabled={page >= data.totalPages} onClick={() => loadAccounts(page + 1)}>下一页</button>
-      </div>
+      <Pagination
+        page={page}
+        totalPages={data.totalPages}
+        total={data.total}
+        pageSize={pageSize}
+        totalLabel="个账号"
+        onPageChange={(nextPage) => loadAccounts(nextPage)}
+        onPageSizeChange={(nextPageSize) => { setPageSize(nextPageSize); void listAccounts({ keyword, role, status, page: 1, pageSize: nextPageSize }).then((result) => { if (result.ok) { setData({ items: result.data.items, total: result.data.total, totalPages: result.data.totalPages }); setPage(result.data.page); setNotice(""); } else setNotice(result.message); }); }}
+      />
 
       {modal?.type === "create" && <AccountCreateModal onCancel={closeModal} onSubmit={submitCreate} />}
       {modal?.type === "edit" && <AccountEditModal account={modal.account} onCancel={closeModal} onSubmit={submitEdit} />}

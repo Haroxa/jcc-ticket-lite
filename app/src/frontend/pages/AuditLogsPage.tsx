@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { listAuditLogs, type Account, type AuditLog } from "../api";
+import { Pagination } from "../components/Pagination/Pagination";
 import { formatDateTime } from "../utils/time";
 
 type AuditLogsPageProps = {
@@ -10,11 +11,12 @@ export function AuditLogsPage({ account }: AuditLogsPageProps) {
   const [actor, setActor] = useState("");
   const [action, setAction] = useState("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [data, setData] = useState<{ items: AuditLog[]; total: number; totalPages: number }>({ items: [], total: 0, totalPages: 1 });
   const [notice, setNotice] = useState("");
 
   async function loadLogs(nextPage = page) {
-    const result = await listAuditLogs({ actor, action, page: nextPage, pageSize: 10 });
+    const result = await listAuditLogs({ actor, action, page: nextPage, pageSize });
     if (!result.ok) {
       setNotice(result.message);
       return;
@@ -41,7 +43,7 @@ export function AuditLogsPage({ account }: AuditLogsPageProps) {
         <div className="table-row header"><span>序号</span><span>时间</span><span>操作人</span><span>类型</span><span>对象</span><span>摘要</span></div>
         {data.items.map((log, index) => (
           <div className="table-row" key={log.id}>
-            <span className="row-no">{(page - 1) * 10 + index + 1}</span>
+            <span className="row-no">{(page - 1) * pageSize + index + 1}</span>
             <strong>{formatDateTime(log.createdAt)}</strong>
             <span>{log.actorName}</span>
             <span>{log.action}</span>
@@ -50,11 +52,14 @@ export function AuditLogsPage({ account }: AuditLogsPageProps) {
           </div>
         ))}
       </div>
-      <div className="pagination-bar">
-        <button type="button" disabled={page <= 1} onClick={() => loadLogs(page - 1)}>上一页</button>
-        <span>第 {page} / {data.totalPages} 页，共 {data.total} 条</span>
-        <button type="button" disabled={page >= data.totalPages} onClick={() => loadLogs(page + 1)}>下一页</button>
-      </div>
+      <Pagination
+        page={page}
+        totalPages={data.totalPages}
+        total={data.total}
+        pageSize={pageSize}
+        onPageChange={(nextPage) => loadLogs(nextPage)}
+        onPageSizeChange={(nextPageSize) => { setPageSize(nextPageSize); void listAuditLogs({ actor, action, page: 1, pageSize: nextPageSize }).then((result) => { if (result.ok) { setData({ items: result.data.items, total: result.data.total, totalPages: result.data.totalPages }); setPage(result.data.page); setNotice(""); } else setNotice(result.message); }); }}
+      />
     </section>
   );
 }

@@ -674,12 +674,36 @@ input, select, textarea {
   margin-top: 12px;
   color: var(--muted);
 }
+.pagination-bar span,
+.pagination-bar label {
+  font-size: 14px;
+}
 .pagination-bar button {
   min-height: 34px;
   padding: 0 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fff;
+}
+.pagination-bar input,
+.pagination-bar select {
+  width: auto;
+  min-height: 34px;
+  padding: 4px 8px;
+}
+.pager-jump,
+.pager-size {
+  display: inline-flex;
+  grid-auto-flow: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+.pager-jump input {
+  width: 62px;
+}
+.pager-total {
+  white-space: nowrap;
 }
 .pagination-bar button:disabled {
   cursor: not-allowed;
@@ -869,8 +893,14 @@ input, select, textarea {
     justify-content: space-between;
     align-items: stretch;
   }
-  .pagination-bar button {
+  .pagination-bar button,
+  .pagination-bar .pager-jump,
+  .pagination-bar .pager-size {
     flex: 1 1 auto;
+  }
+  .pagination-bar .pager-total {
+    flex: 1 1 100%;
+    text-align: center;
   }
   .table-row,
   .people-table .table-row,

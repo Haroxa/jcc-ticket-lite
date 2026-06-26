@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { listRecords, restoreRecord, voidRecord, type Account, type TicketRecord } from "../api";
+import { Pagination } from "../components/Pagination/Pagination";
 import { formatLocalMinute } from "../utils/time";
 import { canWrite } from "../utils/permissions";
 
@@ -12,11 +13,12 @@ export function RecordsPage({ account }: RecordsPageProps) {
   const [type, setType] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [data, setData] = useState<{ items: TicketRecord[]; total: number; totalPages: number }>({ items: [], total: 0, totalPages: 1 });
   const [notice, setNotice] = useState("");
 
   async function loadRecords(nextPage = page) {
-    const result = await listRecords({ keyword, type, status, page: nextPage, pageSize: 10 });
+    const result = await listRecords({ keyword, type, status, page: nextPage, pageSize });
     if (!result.ok) {
       setNotice(result.message);
       return;
@@ -58,7 +60,7 @@ export function RecordsPage({ account }: RecordsPageProps) {
         <div className="table-row header"><span>序号</span><span>时间</span><span>存票人</span><span>类型</span><span>票数</span><span>状态</span><span>操作</span></div>
         {data.items.map((record, index) => (
           <div className={`table-row ${record.type} record-row-${record.status}`} key={record.id}>
-            <span className="row-no">{(page - 1) * 10 + index + 1}</span>
+            <span className="row-no">{(page - 1) * pageSize + index + 1}</span>
             <strong>{formatLocalMinute(record.recordedAt)}</strong>
             <span>{record.personName}</span>
             <span>{record.type === "deposit" ? "存入" : "取用"}</span>
@@ -70,11 +72,14 @@ export function RecordsPage({ account }: RecordsPageProps) {
           </div>
         ))}
       </div>
-      <div className="pagination-bar">
-        <button type="button" disabled={page <= 1} onClick={() => loadRecords(page - 1)}>上一页</button>
-        <span>第 {page} / {data.totalPages} 页，共 {data.total} 条</span>
-        <button type="button" disabled={page >= data.totalPages} onClick={() => loadRecords(page + 1)}>下一页</button>
-      </div>
+      <Pagination
+        page={page}
+        totalPages={data.totalPages}
+        total={data.total}
+        pageSize={pageSize}
+        onPageChange={(nextPage) => loadRecords(nextPage)}
+        onPageSizeChange={(nextPageSize) => { setPageSize(nextPageSize); void listRecords({ keyword, type, status, page: 1, pageSize: nextPageSize }).then((result) => { if (result.ok) { setData({ items: result.data.items, total: result.data.total, totalPages: result.data.totalPages }); setPage(result.data.page); setNotice(""); } else setNotice(result.message); }); }}
+      />
     </section>
   );
 }
