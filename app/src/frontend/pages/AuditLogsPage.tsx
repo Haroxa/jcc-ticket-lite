@@ -41,7 +41,7 @@ export function AuditLogsPage({ account }: AuditLogsPageProps) {
         <div className="table-row header"><span>序号</span><span>时间</span><span>操作人</span><span>类型</span><span>对象</span><span>摘要</span></div>
         {data.items.map((log, index) => (
           <div className="table-row" key={log.id}>
-            <span>{(page - 1) * 10 + index + 1}</span>
+            <span className="row-no">{(page - 1) * 10 + index + 1}</span>
             <strong>{formatDateTime(log.createdAt)}</strong>
             <span>{log.actorName}</span>
             <span>{log.action}</span>

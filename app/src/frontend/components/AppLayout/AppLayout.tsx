@@ -92,6 +92,20 @@ export function AppLayout({ activePage, account, pageTitle, onNavigate, onLogout
         </div>
       </aside>
 
+      <nav className="tablet-nav" aria-label="平板导航">
+        {[...primaryNav, ...systemNav].filter(visibleNav).map((item) => (
+          <button
+            className={`nav-button ${activePage === item.key ? "active" : ""}`}
+            key={item.key}
+            type="button"
+            onClick={() => onNavigate(item.key)}
+          >
+            <span className="nav-icon">{item.icon}</span>
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </nav>
+
       <main className="main-content">
         <div className="page-heading">
           <div>

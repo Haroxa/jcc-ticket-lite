@@ -100,11 +100,11 @@ export function PeoplePage({ account }: PeoplePageProps) {
       )}
       <p className="filter-summary">内部管理页显示全部状态；停用和拉黑不会进入录入候选和公开榜单。</p>
       {notice && <p className="notice-text">{notice}</p>}
-      <div className="responsive-table">
+      <div className="responsive-table people-table">
         <div className="table-row header"><span>序号</span><span>存票人</span><span>余额</span><span>状态</span><span>备注</span><span>操作</span></div>
         {data.items.map((person, index) => (
           <div className={`table-row person-status-${person.status}`} key={person.id}>
-            <span>{(page - 1) * 10 + index + 1}</span>
+            <span className="row-no">{(page - 1) * 10 + index + 1}</span>
             <strong>{person.name}</strong>
             <span>{person.balance}</span>
             <span className="status-pill">{statusLabel[person.status]}</span>

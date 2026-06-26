@@ -42,8 +42,8 @@ export function HistoryPage() {
       <div className="responsive-table records-table">
         <div className="table-row header"><span>序号</span><span>时间</span><span>存票人</span><span>类型</span><span>票数</span><span>状态</span><span>备注</span></div>
         {records.map((record, index) => (
-          <div className={`table-row record-row-${record.status}`} key={record.id}>
-            <span>{index + 1}</span>
+          <div className={`table-row ${record.type} record-row-${record.status}`} key={record.id}>
+            <span className="row-no">{index + 1}</span>
             <strong>{formatLocalMinute(record.recordedAt)}</strong>
             <span>{record.personName}</span>
             <span>{record.type === "deposit" ? "存入" : "取用"}</span>

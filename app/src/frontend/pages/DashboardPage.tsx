@@ -49,7 +49,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
           <button className="primary-button" type="button" onClick={() => onNavigate("entry")}>新增记录</button>
           <div className="record-list">
             {data?.recent.map((record) => (
-              <article className="record-card" key={record.id}>
+              <article className={`record-card ${record.type} ${record.status === "voided" ? "voided" : ""}`} key={record.id}>
                 <strong>{record.personName} {record.type === "deposit" ? "存入" : "取用"} {record.amount}</strong>
                 <span>{formatLocalMinute(record.recordedAt)} · {record.status === "normal" ? "正常" : "作废"}</span>
               </article>
