@@ -72,6 +72,20 @@ export function AccountsPage({ account }: AccountsPageProps) {
     setModal(null);
   }
 
+  async function resetFilters() {
+    setKeyword("");
+    setRole("");
+    setStatus("");
+    const result = await listAccounts({ keyword: "", role: "", status: "", page: 1, pageSize });
+    if (result.ok) {
+      setData({ items: result.data.items, total: result.data.total, totalPages: result.data.totalPages });
+      setPage(result.data.page);
+      setNotice("");
+    } else {
+      setNotice(result.message);
+    }
+  }
+
   async function submitCreate(payload: { username: string; displayName: string; password: string; role: ManagedRole }) {
     const result = await createAccount(payload);
     if (!result.ok) {
@@ -122,6 +136,7 @@ export function AccountsPage({ account }: AccountsPageProps) {
         <label>状态<select value={status} onChange={(event) => setStatus(event.target.value)}><option value="">全部状态</option><option value="active">启用</option><option value="disabled">停用</option></select></label>
         <div className="filter-actions">
           <button className="primary-button" type="button" onClick={() => loadAccounts(1)}>查询</button>
+          <button className="secondary-button" type="button" onClick={resetFilters}>重置</button>
         </div>
       </div>
 

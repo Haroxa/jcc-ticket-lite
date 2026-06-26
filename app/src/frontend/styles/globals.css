@@ -650,6 +650,9 @@ input, select, textarea {
 .records-table .table-row {
   grid-template-columns: 52px minmax(150px, 1.2fr) minmax(110px, 1fr) minmax(70px, 0.7fr) minmax(70px, 0.7fr) minmax(70px, 0.7fr) minmax(76px, auto);
 }
+.people-table .table-row {
+  grid-template-columns: 52px minmax(150px, 1fr) 100px 100px minmax(180px, 1.2fr) 150px;
+}
 .audit-table .table-row {
   grid-template-columns: 52px minmax(150px, 1fr) minmax(100px, 0.8fr) minmax(96px, 0.8fr) minmax(88px, 0.8fr) minmax(220px, 1.6fr);
 }
@@ -707,6 +710,18 @@ input, select, textarea {
   padding: 0 8px;
   text-align: center;
   line-height: 1;
+}
+.people-table .row-actions {
+  display: grid;
+  grid-template-columns: 64px 78px;
+  gap: 8px;
+  justify-content: end;
+}
+.people-table .row-actions .row-action {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  text-align: center;
 }
 .accounts-table .account-cell-actions.muted {
   text-align: right;
@@ -912,7 +927,7 @@ input, select, textarea {
   }
   .people-table .table-row {
     min-width: 760px;
-    grid-template-columns: 52px minmax(150px, 1.3fr) minmax(90px, 0.8fr) minmax(84px, 0.7fr) minmax(170px, 1fr) minmax(150px, auto);
+    grid-template-columns: 52px minmax(150px, 1fr) 100px 100px minmax(180px, 1.2fr) 150px;
   }
   .records-table .table-row {
     min-width: 820px;
@@ -1102,6 +1117,18 @@ input, select, textarea {
     width: 100%;
     min-height: 36px;
     padding: 0 6px;
+  }
+  .people-table .row-actions {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    justify-content: stretch;
+    width: 100%;
+  }
+  .people-table .row-actions .row-action {
+    min-height: 36px;
   }
   .public-shell {
     padding: 18px 12px 28px;

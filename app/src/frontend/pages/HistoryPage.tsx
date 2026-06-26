@@ -36,13 +36,32 @@ export function HistoryPage() {
     });
   }, []);
 
+  async function resetFilters() {
+    const nextPersonId = people[0]?.id || "";
+    setPersonId(nextPersonId);
+    setType("");
+    setStatus("");
+    if (!nextPersonId) return;
+    const result = await listRecords({ personId: nextPersonId, page: 1, pageSize });
+    if (result.ok) {
+      setData({ items: result.data.items, total: result.data.total, totalPages: result.data.totalPages });
+      setPage(result.data.page);
+      setNotice("");
+    } else {
+      setNotice(result.message);
+    }
+  }
+
   return (
     <section className="panel">
       <div className="filter-panel">
         <label>存票人<select value={personId} onChange={(event) => { setPersonId(event.target.value); void loadHistory(event.target.value, 1); }}>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
         <label>类型<select value={type} onChange={(event) => { setType(event.target.value); setPage(1); }}><option value="">全部类型</option><option value="deposit">存入</option><option value="withdraw">取用</option></select></label>
         <label>状态<select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}><option value="">全部状态</option><option value="normal">正常</option><option value="voided">作废</option></select></label>
-        <div className="filter-actions"><button className="primary-button" type="button" onClick={() => loadHistory(personId, 1)}>查询</button></div>
+        <div className="filter-actions">
+          <button className="primary-button" type="button" onClick={() => loadHistory(personId, 1)}>查询</button>
+          <button className="secondary-button" type="button" onClick={resetFilters}>重置</button>
+        </div>
       </div>
       <p className="filter-summary">个人历史保留完整流水，用于核对每一步余额变化。</p>
       {notice && <p className="notice-text">{notice}</p>}

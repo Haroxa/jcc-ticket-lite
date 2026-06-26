@@ -30,12 +30,28 @@ export function AuditLogsPage({ account }: AuditLogsPageProps) {
     void loadLogs(1);
   }, []);
 
+  async function resetFilters() {
+    setActor("");
+    setAction("");
+    const result = await listAuditLogs({ actor: "", action: "", page: 1, pageSize });
+    if (result.ok) {
+      setData({ items: result.data.items, total: result.data.total, totalPages: result.data.totalPages });
+      setPage(result.data.page);
+      setNotice("");
+    } else {
+      setNotice(result.message);
+    }
+  }
+
   return (
     <section className="panel">
       <div className="filter-panel">
         <label>操作人<input value={actor} onChange={(event) => setActor(event.target.value)} placeholder="搜索操作人" /></label>
         <label>操作类型<select value={action} onChange={(event) => setAction(event.target.value)}><option value="">全部类型</option><option value="新增记录">新增记录</option><option value="作废记录">作废记录</option><option value="恢复记录">恢复记录</option><option value="新增存票人">新增存票人</option><option value="修改存票人状态">修改存票人状态</option><option value="登录">登录</option></select></label>
-        <div className="filter-actions"><button className="primary-button" type="button" onClick={() => loadLogs(1)}>查询</button></div>
+        <div className="filter-actions">
+          <button className="primary-button" type="button" onClick={() => loadLogs(1)}>查询</button>
+          <button className="secondary-button" type="button" onClick={resetFilters}>重置</button>
+        </div>
       </div>
       <p className="filter-summary">{account.role === "admin" ? "管理员查看全部日志。" : "操作员只查看自己的操作。"}</p>
       {notice && <p className="notice-text">{notice}</p>}

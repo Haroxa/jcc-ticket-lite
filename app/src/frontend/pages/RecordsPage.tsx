@@ -32,6 +32,20 @@ export function RecordsPage({ account }: RecordsPageProps) {
     void loadRecords(1);
   }, []);
 
+  async function resetFilters() {
+    setKeyword("");
+    setType("");
+    setStatus("");
+    const result = await listRecords({ keyword: "", type: "", status: "", page: 1, pageSize });
+    if (result.ok) {
+      setData({ items: result.data.items, total: result.data.total, totalPages: result.data.totalPages });
+      setPage(result.data.page);
+      setNotice("");
+    } else {
+      setNotice(result.message);
+    }
+  }
+
   async function handleToggle(record: TicketRecord) {
     if (!canWrite(account)) {
       setNotice("当前角色不能修改流水状态。");
@@ -53,7 +67,10 @@ export function RecordsPage({ account }: RecordsPageProps) {
         <label>关键词<input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="搜索存票人或备注" /></label>
         <label>类型<select value={type} onChange={(event) => setType(event.target.value)}><option value="">全部类型</option><option value="deposit">存入</option><option value="withdraw">取用</option></select></label>
         <label>状态<select value={status} onChange={(event) => setStatus(event.target.value)}><option value="">全部状态</option><option value="normal">正常</option><option value="voided">作废</option></select></label>
-        <div className="filter-actions"><button className="primary-button" type="button" onClick={() => loadRecords(1)}>查询</button></div>
+        <div className="filter-actions">
+          <button className="primary-button" type="button" onClick={() => loadRecords(1)}>查询</button>
+          <button className="secondary-button" type="button" onClick={resetFilters}>重置</button>
+        </div>
       </div>
       {notice && <p className="notice-text">{notice}</p>}
       <div className="responsive-table records-table">
