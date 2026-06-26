@@ -182,6 +182,14 @@ textarea { resize: vertical; }
   cursor: not-allowed;
   opacity: 0.6;
 }
+.compact-button {
+  min-height: 34px;
+  padding: 0 12px;
+}
+.login-public-link {
+  color: var(--accent-strong);
+  background: transparent;
+}
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -961,30 +969,30 @@ input, select, textarea {
 }
 .bottom-nav { display: none; }
 .public-shell {
-  width: min(920px, 100%);
+  width: min(860px, 100%);
   margin: 0 auto;
   display: grid;
-  gap: 16px;
-  padding: 28px 20px 40px;
+  align-content: start;
+  gap: 18px;
+  padding: 30px 20px 42px;
   min-height: 100vh;
-  background: linear-gradient(180deg, rgba(15, 118, 110, 0.1), transparent 280px);
 }
 .public-hero {
   display: flex;
   justify-content: space-between;
-  align-items: stretch;
+  align-items: flex-end;
   gap: 16px;
-  padding: 12px 0 4px;
+  padding: 10px 0 2px;
 }
 .public-hero h1, .public-hero p { margin: 0; }
-.public-hero h1 { font-size: 36px; }
+.public-hero h1 { font-size: 34px; }
 .public-hero p { margin-top: 6px; color: var(--muted); }
 .public-summary {
-  min-width: 150px;
+  min-width: 132px;
   display: grid;
   align-content: center;
   gap: 5px;
-  padding: 14px;
+  padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
@@ -992,17 +1000,50 @@ input, select, textarea {
 }
 .public-summary strong { font-size: 32px; color: var(--accent-strong); }
 .dev-only-button { margin-top: 12px; }
+.public-board {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.public-board-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.public-board-head h2,
+.public-board-head p {
+  margin: 0;
+}
+.public-board-head h2 {
+  font-size: 20px;
+}
+.public-board-head p,
+.public-board-head span {
+  color: var(--muted);
+  font-size: 14px;
+}
+.public-board-head span {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--surface-soft);
+}
 .public-rank-list {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 .public-rank-item {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) auto;
+  grid-template-columns: 42px minmax(0, 1fr) minmax(76px, auto);
   gap: 12px;
   align-items: center;
-  min-height: 66px;
-  padding: 13px 14px;
+  min-height: 60px;
+  padding: 11px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfcfc;
@@ -1020,7 +1061,6 @@ input, select, textarea {
 .public-rank-person { display: grid; gap: 3px; }
 .public-rank-person span { color: var(--muted); }
 .public-rank-item b {
-  min-width: 82px;
   text-align: right;
   color: var(--accent-strong);
   font-size: 22px;
@@ -1311,6 +1351,10 @@ input, select, textarea {
     flex-direction: column;
   }
   .public-hero h1 { font-size: 30px; }
+  .public-board { padding: 12px; }
+  .public-board-head {
+    flex-direction: column;
+  }
   .public-rank-item {
     grid-template-columns: 36px minmax(0, 1fr) auto;
   }

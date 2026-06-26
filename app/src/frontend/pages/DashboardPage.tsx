@@ -33,7 +33,10 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
       </div>
       <div className="two-column">
         <section className="panel">
-          <div className="panel-header"><h3>余额排行</h3><span>只展示正常且余额大于 0</span></div>
+          <div className="panel-header">
+            <div><h3>余额排行</h3><span>只展示正常且余额大于 0</span></div>
+            <button className="secondary-button compact-button" type="button" onClick={() => window.open("/public-board", "_blank", "noopener,noreferrer")}>公开榜</button>
+          </div>
           <div className="rank-list">
             {data?.rank.map((person, index) => (
               <div className="rank-item" key={person.id}>

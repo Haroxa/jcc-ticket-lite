@@ -23,8 +23,7 @@ export type PageKey =
   | "accounts"
   | "auditLogs"
   | "settings"
-  | "more"
-  | "publicBoard";
+  | "more";
 
 const pageMap: Record<PageKey, string> = {
   dashboard: "工作台",
@@ -35,8 +34,7 @@ const pageMap: Record<PageKey, string> = {
   accounts: "账号管理",
   auditLogs: "操作日志",
   settings: "系统信息",
-  more: "更多",
-  publicBoard: "公开存票榜"
+  more: "更多"
 };
 
 export default function App() {
@@ -71,7 +69,7 @@ export default function App() {
     setPage("dashboard");
   }
 
-  if (page === "publicBoard") {
+  if (window.location.pathname === "/public-board") {
     return <PublicBoardPage />;
   }
 
@@ -80,7 +78,7 @@ export default function App() {
   }
 
   if (!account) {
-    return <LoginPage onLogin={setAccount} onOpenPublicBoard={() => setPage("publicBoard")} />;
+    return <LoginPage onLogin={setAccount} />;
   }
 
   return (

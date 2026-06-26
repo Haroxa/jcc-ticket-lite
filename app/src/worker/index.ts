@@ -94,6 +94,11 @@ export default {
       return notFound();
     }
 
+    if (url.pathname === "/public-board") {
+      const indexUrl = new URL("/", request.url);
+      return env.ASSETS.fetch(new Request(indexUrl, request));
+    }
+
     return env.ASSETS.fetch(request);
   }
 };

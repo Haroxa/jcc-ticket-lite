@@ -3,10 +3,9 @@ import { login, type Account } from "../api";
 
 type LoginPageProps = {
   onLogin: (account: Account) => void;
-  onOpenPublicBoard: () => void;
 };
 
-export function LoginPage({ onLogin, onOpenPublicBoard }: LoginPageProps) {
+export function LoginPage({ onLogin }: LoginPageProps) {
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("");
   const [notice, setNotice] = useState("需要先通过 /api/setup/admin 初始化管理员账号。");
@@ -35,7 +34,7 @@ export function LoginPage({ onLogin, onOpenPublicBoard }: LoginPageProps) {
         <label>用户名<input value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" /></label>
         <label>密码<input value={password} onChange={(event) => setPassword(event.target.value)} type="password" autoComplete="current-password" /></label>
         <button className="primary-button" disabled={isSubmitting} type="submit">{isSubmitting ? "登录中..." : "登录"}</button>
-        <button className="secondary-button" type="button" onClick={onOpenPublicBoard}>打开公开存票榜</button>
+        <button className="ghost-button login-public-link" type="button" onClick={() => window.open("/public-board", "_blank", "noopener,noreferrer")}>查看公开存票榜</button>
         <p className="muted">{notice}</p>
       </form>
     </section>

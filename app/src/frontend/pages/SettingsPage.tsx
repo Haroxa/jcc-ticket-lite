@@ -42,7 +42,7 @@ export function SettingsPage({ account, onNavigate }: SettingsPageProps) {
         <button className="secondary-button" type="button" onClick={() => onNavigate("records")}>查看存取记录</button>
         {canAudit(account) && <button className="secondary-button" type="button" onClick={() => onNavigate("auditLogs")}>查看操作日志</button>}
         {canAdmin(account) && <button className="secondary-button" type="button" onClick={() => onNavigate("accounts")}>管理账号</button>}
-        <button className="secondary-button" type="button" onClick={() => onNavigate("publicBoard")}>打开公开存票榜</button>
+        <button className="secondary-button" type="button" onClick={() => window.open("/public-board", "_blank", "noopener,noreferrer")}>打开公开存票榜</button>
       </section>
     </div>
   );
