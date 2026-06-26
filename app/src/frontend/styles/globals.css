@@ -648,10 +648,7 @@ input, select, textarea {
   grid-template-columns: 52px minmax(150px, 1fr) minmax(100px, 0.8fr) minmax(96px, 0.8fr) minmax(88px, 0.8fr) minmax(220px, 1.6fr);
 }
 .accounts-table .table-row {
-  grid-template-columns: minmax(130px, 1.1fr) minmax(70px, 0.48fr) minmax(62px, 0.38fr) minmax(118px, 0.68fr) minmax(118px, 0.68fr) 226px;
-}
-.accounts-table .table-row > span:first-child {
-  display: none;
+  grid-template-columns: 52px minmax(160px, 0.9fr) 86px 72px 150px 150px 226px;
 }
 .accounts-table .table-row > * {
   min-width: 0;
@@ -676,6 +673,8 @@ input, select, textarea {
 .accounts-table .account-cell-updated {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .accounts-table .account-cell-status {
   display: flex;
@@ -915,11 +914,8 @@ input, select, textarea {
     grid-template-columns: 52px minmax(150px, 1fr) minmax(110px, 0.8fr) minmax(96px, 0.8fr) minmax(90px, 0.8fr) minmax(240px, 1.6fr);
   }
   .accounts-table .table-row {
-    min-width: 760px;
-    grid-template-columns: minmax(130px, 1fr) minmax(68px, 0.42fr) minmax(60px, 0.35fr) minmax(106px, 0.55fr) minmax(106px, 0.55fr) 218px;
-  }
-  .accounts-table .table-row > span:first-child {
-    display: none;
+    min-width: 900px;
+    grid-template-columns: 52px minmax(160px, 0.9fr) 86px 72px 150px 150px 218px;
   }
   .accounts-table .account-cell-actions {
     width: 218px;
