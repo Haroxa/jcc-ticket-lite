@@ -131,7 +131,7 @@ export function AppLayout({ activePage, account, pageTitle, onNavigate, onLogout
             <span>{item.shortLabel || item.label}</span>
           </button>
         ))}
-        <button className="nav-button" type="button" onClick={() => onNavigate("settings")}>
+        <button className={`nav-button ${activePage === "more" ? "active" : ""}`} type="button" onClick={() => onNavigate("more")}>
           <span className="nav-icon">⋯</span>
           更多
         </button>

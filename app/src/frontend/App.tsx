@@ -7,6 +7,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { EntryPage } from "./pages/EntryPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { LoginPage } from "./pages/LoginPage";
+import { MorePage } from "./pages/MorePage";
 import { PeoplePage } from "./pages/PeoplePage";
 import { PublicBoardPage } from "./pages/PublicBoardPage";
 import { RecordsPage } from "./pages/RecordsPage";
@@ -22,6 +23,7 @@ export type PageKey =
   | "accounts"
   | "auditLogs"
   | "settings"
+  | "more"
   | "publicBoard";
 
 const pageMap: Record<PageKey, string> = {
@@ -33,6 +35,7 @@ const pageMap: Record<PageKey, string> = {
   accounts: "账号管理",
   auditLogs: "操作日志",
   settings: "系统信息",
+  more: "更多",
   publicBoard: "公开存票榜"
 };
 
@@ -96,6 +99,7 @@ export default function App() {
       {page === "accounts" && <AccountsPage account={account} />}
       {page === "auditLogs" && <AuditLogsPage account={account} />}
       {page === "settings" && <SettingsPage />}
+      {page === "more" && <MorePage account={account} onNavigate={navigate} onLogout={handleLogout} />}
     </AppLayout>
   );
 }
