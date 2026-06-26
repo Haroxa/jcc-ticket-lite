@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { createRecord, listPeople, type Account, type Person } from "../api";
+import { PersonSearchSelect } from "../components/PersonSearchSelect/PersonSearchSelect";
 import { canWrite } from "../utils/permissions";
 
 function currentMinute() {
@@ -47,9 +48,6 @@ export function EntryPage({ account }: EntryPageProps) {
   const nextBalance = selectedPerson && Number.isFinite(numericAmount) && numericAmount > 0
     ? selectedPerson.balance + (type === "deposit" ? numericAmount : -numericAmount)
     : selectedPerson?.balance ?? 0;
-  const matchedPeople = people
-    .filter((person) => personKeyword && (person.name.includes(personKeyword) || person.note.includes(personKeyword)))
-    .slice(0, 8);
   const calcTotal = calcSteps.reduce((sum, step) => sum + step.price * step.qty * step.direction, 0);
 
   function selectPerson(person: Person) {
@@ -114,19 +112,14 @@ export function EntryPage({ account }: EntryPageProps) {
     <div className="entry-layout">
       <section className="panel form-panel">
         <label>时间<input type="datetime-local" value={recordedAt} onChange={(event) => setRecordedAt(event.target.value)} /></label>
-        <div className="person-picker">
-          <label>存票人搜索<input value={personKeyword} onChange={(event) => { setPersonKeyword(event.target.value); setPersonId(""); }} placeholder="输入姓名或备注后选择" /></label>
-          <div className="person-picker-list" role="listbox">
-            {matchedPeople.map((person) => (
-              <button className={person.id === personId ? "active" : ""} key={person.id} type="button" onClick={() => selectPerson(person)}>
-                <strong>{person.name}</strong>
-                <span>余额 {person.balance}</span>
-              </button>
-            ))}
-            {!personKeyword && <p className="muted">请输入姓名或备注搜索后选择存票人。</p>}
-            {personKeyword && !matchedPeople.length && <p className="muted">没有匹配的正常存票人。</p>}
-          </div>
-        </div>
+        <PersonSearchSelect
+          people={people}
+          selectedId={personId}
+          value={personKeyword}
+          emptyText="没有匹配的正常存票人。"
+          onInputChange={(value) => { setPersonKeyword(value); setPersonId(""); }}
+          onSelect={selectPerson}
+        />
         <div>
           <span className="field-label">类型</span>
           <div className="segmented">

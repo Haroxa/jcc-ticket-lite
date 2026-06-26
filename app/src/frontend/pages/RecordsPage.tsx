@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { listRecords, restoreRecord, voidRecord, type Account, type TicketRecord } from "../api";
+import { EmptyState } from "../components/EmptyState/EmptyState";
 import { Pagination } from "../components/Pagination/Pagination";
 import { formatLocalMinute } from "../utils/time";
 import { canWrite } from "../utils/permissions";
@@ -88,6 +89,7 @@ export function RecordsPage({ account }: RecordsPageProps) {
             ) : <span className="muted">只读</span>}
           </div>
         ))}
+        {!data.items.length && <EmptyState title="暂无存取记录" description="当前筛选条件下没有流水，可重置筛选或先录入一条记录。" />}
       </div>
       <Pagination
         page={page}

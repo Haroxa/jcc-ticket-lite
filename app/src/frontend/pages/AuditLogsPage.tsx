@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { listAuditLogs, type Account, type AuditLog } from "../api";
+import { EmptyState } from "../components/EmptyState/EmptyState";
 import { Pagination } from "../components/Pagination/Pagination";
 import { formatDateTime } from "../utils/time";
 
@@ -67,6 +68,7 @@ export function AuditLogsPage({ account }: AuditLogsPageProps) {
             <span>{log.summary}</span>
           </div>
         ))}
+        {!data.items.length && <EmptyState title="暂无操作日志" description="当前筛选条件下没有日志，可重置筛选后查看。" />}
       </div>
       <Pagination
         page={page}

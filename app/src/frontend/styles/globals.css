@@ -479,6 +479,29 @@ input, select, textarea {
   color: #b42318;
   font-size: 14px;
 }
+.empty-inline {
+  margin: 0;
+  padding: 10px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.empty-state {
+  display: grid;
+  gap: 5px;
+  padding: 18px;
+  border: 1px dashed #b8c9c4;
+  border-radius: 8px;
+  color: var(--muted);
+  background: #fbfcfc;
+  text-align: center;
+}
+.empty-state strong {
+  color: var(--text);
+  font-size: 16px;
+}
+.empty-state span {
+  font-size: 14px;
+}
 .field-hint {
   margin: -6px 0 0;
   color: var(--muted);

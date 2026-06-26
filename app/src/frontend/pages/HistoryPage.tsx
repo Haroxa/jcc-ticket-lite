@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { listPeople, listRecords, type Person, type TicketRecord } from "../api";
+import { EmptyState } from "../components/EmptyState/EmptyState";
 import { Pagination } from "../components/Pagination/Pagination";
+import { PersonSearchSelect } from "../components/PersonSearchSelect/PersonSearchSelect";
 import { formatLocalMinute } from "../utils/time";
 
 export function HistoryPage() {
   const [people, setPeople] = useState<Person[]>([]);
   const [personId, setPersonId] = useState("");
+  const [personKeyword, setPersonKeyword] = useState("");
   const [type, setType] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
@@ -14,7 +17,12 @@ export function HistoryPage() {
   const [notice, setNotice] = useState("");
 
   async function loadHistory(nextPersonId = personId, nextPage = page, nextPageSize = pageSize) {
-    if (!nextPersonId) return;
+    if (!nextPersonId) {
+      setData({ items: [], total: 0, totalPages: 1 });
+      setPage(1);
+      setNotice("");
+      return;
+    }
     const result = await listRecords({ personId: nextPersonId, type, status, page: nextPage, pageSize: nextPageSize });
     if (!result.ok) {
       setNotice(result.message);
@@ -29,33 +37,36 @@ export function HistoryPage() {
     listPeople({ pageSize: 50 }).then((result) => {
       if (result.ok) {
         setPeople(result.data.items);
-        const firstId = result.data.items[0]?.id || "";
-        setPersonId(firstId);
-        void loadHistory(firstId);
       }
     });
   }, []);
 
   async function resetFilters() {
-    const nextPersonId = people[0]?.id || "";
-    setPersonId(nextPersonId);
+    setPersonId("");
+    setPersonKeyword("");
     setType("");
     setStatus("");
-    if (!nextPersonId) return;
-    const result = await listRecords({ personId: nextPersonId, page: 1, pageSize });
-    if (result.ok) {
-      setData({ items: result.data.items, total: result.data.total, totalPages: result.data.totalPages });
-      setPage(result.data.page);
-      setNotice("");
-    } else {
-      setNotice(result.message);
-    }
+    setData({ items: [], total: 0, totalPages: 1 });
+    setPage(1);
+    setNotice("");
+  }
+
+  function selectPerson(person: Person) {
+    setPersonId(person.id);
+    setPersonKeyword(person.name);
+    void loadHistory(person.id, 1);
   }
 
   return (
     <section className="panel">
       <div className="filter-panel">
-        <label>存票人<select value={personId} onChange={(event) => { setPersonId(event.target.value); void loadHistory(event.target.value, 1); }}>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
+        <PersonSearchSelect
+          people={people}
+          selectedId={personId}
+          value={personKeyword}
+          onInputChange={(value) => { setPersonKeyword(value); setPersonId(""); setData({ items: [], total: 0, totalPages: 1 }); }}
+          onSelect={selectPerson}
+        />
         <label>类型<select value={type} onChange={(event) => { setType(event.target.value); setPage(1); }}><option value="">全部类型</option><option value="deposit">存入</option><option value="withdraw">取用</option></select></label>
         <label>状态<select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}><option value="">全部状态</option><option value="normal">正常</option><option value="voided">作废</option></select></label>
         <div className="filter-actions">
@@ -78,6 +89,8 @@ export function HistoryPage() {
             <span>{record.note || record.voidReason || "无备注"}</span>
           </div>
         ))}
+        {!personId && <EmptyState title="请选择存票人" description="输入姓名或备注后，从下拉结果中点击选择，再查看个人历史。" />}
+        {personId && !data.items.length && <EmptyState title="暂无历史记录" description="当前筛选条件下没有流水，可调整类型或状态后重新查询。" />}
       </div>
       <Pagination
         page={page}

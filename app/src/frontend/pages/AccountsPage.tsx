@@ -8,6 +8,7 @@ import {
   type Account,
   type ManagedAccount
 } from "../api";
+import { EmptyState } from "../components/EmptyState/EmptyState";
 import { Pagination } from "../components/Pagination/Pagination";
 import { formatDateTime } from "../utils/time";
 
@@ -170,6 +171,7 @@ export function AccountsPage({ account }: AccountsPageProps) {
             </div>
           );
         })}
+        {!data.items.length && <EmptyState title="暂无账号" description="当前筛选条件下没有账号，可重置筛选或新增成员账号。" />}
       </div>
 
       <Pagination

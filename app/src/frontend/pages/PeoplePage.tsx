@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { changePersonStatus, createPerson, listPeople, updatePerson, type Account, type Person, type PersonStatus } from "../api";
+import { EmptyState } from "../components/EmptyState/EmptyState";
 import { Pagination } from "../components/Pagination/Pagination";
 import { canAdmin } from "../utils/permissions";
 
@@ -123,6 +124,7 @@ export function PeoplePage({ account }: PeoplePageProps) {
             ) : <span className="muted" data-label="操作">只读</span>}
           </div>
         ))}
+        {!data.items.length && <EmptyState title="暂无存票人" description="当前筛选条件下没有存票人，可重置筛选或新增存票人。" />}
       </div>
       <Pagination
         page={page}
