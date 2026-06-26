@@ -526,8 +526,14 @@ input, select, textarea {
 .responsive-table {
   display: grid;
   gap: 10px;
+  width: 100%;
+  min-width: 0;
   max-width: 100%;
   margin-top: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 0 8px;
+  scrollbar-gutter: stable;
 }
 .table-row {
   display: grid;
@@ -648,7 +654,10 @@ input, select, textarea {
   grid-template-columns: 52px minmax(150px, 1fr) minmax(100px, 0.8fr) minmax(96px, 0.8fr) minmax(88px, 0.8fr) minmax(220px, 1.6fr);
 }
 .accounts-table .table-row {
-  grid-template-columns: 52px minmax(160px, 0.9fr) 86px 72px 150px 150px 226px;
+  grid-template-columns: 44px minmax(128px, 0.75fr) 72px 64px 146px 146px 226px;
+  gap: 10px;
+  width: 100%;
+  min-width: 920px;
 }
 .accounts-table .table-row > * {
   min-width: 0;
@@ -914,8 +923,8 @@ input, select, textarea {
     grid-template-columns: 52px minmax(150px, 1fr) minmax(110px, 0.8fr) minmax(96px, 0.8fr) minmax(90px, 0.8fr) minmax(240px, 1.6fr);
   }
   .accounts-table .table-row {
-    min-width: 900px;
-    grid-template-columns: 52px minmax(160px, 0.9fr) 86px 72px 150px 150px 218px;
+    min-width: 920px;
+    grid-template-columns: 44px minmax(128px, 0.75fr) 70px 64px 142px 142px 218px;
   }
   .accounts-table .account-cell-actions {
     width: 218px;
@@ -1017,6 +1026,7 @@ input, select, textarea {
   }
   .responsive-table {
     overflow: visible;
+    padding-bottom: 0;
   }
   .responsive-table.accounts-table {
     overflow: visible;
