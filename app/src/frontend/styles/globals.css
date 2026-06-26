@@ -651,7 +651,8 @@ input, select, textarea {
   grid-template-columns: 52px minmax(150px, 1.2fr) minmax(110px, 1fr) minmax(70px, 0.7fr) minmax(70px, 0.7fr) minmax(70px, 0.7fr) minmax(76px, auto);
 }
 .people-table .table-row {
-  grid-template-columns: 52px minmax(150px, 1fr) 100px 100px minmax(180px, 1.2fr) 150px;
+  grid-template-columns: 48px minmax(120px, 1fr) 82px 82px minmax(140px, 1.15fr) 148px;
+  gap: 10px;
 }
 .audit-table .table-row {
   grid-template-columns: 52px minmax(150px, 1fr) minmax(100px, 0.8fr) minmax(96px, 0.8fr) minmax(88px, 0.8fr) minmax(220px, 1.6fr);
@@ -713,8 +714,10 @@ input, select, textarea {
 }
 .people-table .row-actions {
   display: grid;
-  grid-template-columns: 64px 78px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
+  width: 100%;
+  min-width: 0;
   justify-content: end;
 }
 .people-table .row-actions .row-action {
@@ -926,8 +929,13 @@ input, select, textarea {
     min-width: 760px;
   }
   .people-table .table-row {
-    min-width: 760px;
-    grid-template-columns: 52px minmax(150px, 1fr) 100px 100px minmax(180px, 1.2fr) 150px;
+    min-width: 0;
+    grid-template-columns: 44px minmax(96px, 1fr) 68px 74px minmax(96px, 1.05fr) 144px;
+    gap: 8px;
+  }
+  .responsive-table.people-table {
+    overflow-x: hidden;
+    padding-bottom: 0;
   }
   .records-table .table-row {
     min-width: 820px;
