@@ -648,7 +648,7 @@ input, select, textarea {
   grid-template-columns: 52px minmax(150px, 1fr) minmax(100px, 0.8fr) minmax(96px, 0.8fr) minmax(88px, 0.8fr) minmax(220px, 1.6fr);
 }
 .accounts-table .table-row {
-  grid-template-columns: minmax(130px, 1.1fr) minmax(70px, 0.48fr) minmax(62px, 0.38fr) minmax(118px, 0.68fr) minmax(118px, 0.68fr) 184px;
+  grid-template-columns: minmax(130px, 1.1fr) minmax(70px, 0.48fr) minmax(62px, 0.38fr) minmax(118px, 0.68fr) minmax(118px, 0.68fr) 226px;
 }
 .accounts-table .table-row > span:first-child {
   display: none;
@@ -684,12 +684,21 @@ input, select, textarea {
 .accounts-table .account-cell-actions {
   justify-self: end;
   align-self: center;
-  width: 184px;
+  width: 226px;
 }
 .accounts-table .row-actions.account-cell-actions {
   display: grid;
-  grid-template-columns: 42px 42px 72px;
+  grid-template-columns: 56px 56px 98px;
+  gap: 8px;
   justify-content: end;
+}
+.accounts-table .row-actions .row-action {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 0 8px;
+  text-align: center;
+  line-height: 1;
 }
 .accounts-table .account-cell-actions.muted {
   text-align: right;
@@ -907,16 +916,16 @@ input, select, textarea {
   }
   .accounts-table .table-row {
     min-width: 760px;
-    grid-template-columns: minmax(130px, 1fr) minmax(68px, 0.42fr) minmax(60px, 0.35fr) minmax(110px, 0.6fr) minmax(110px, 0.6fr) 180px;
+    grid-template-columns: minmax(130px, 1fr) minmax(68px, 0.42fr) minmax(60px, 0.35fr) minmax(106px, 0.55fr) minmax(106px, 0.55fr) 218px;
   }
   .accounts-table .table-row > span:first-child {
     display: none;
   }
   .accounts-table .account-cell-actions {
-    width: 180px;
+    width: 218px;
   }
   .accounts-table .row-actions.account-cell-actions {
-    grid-template-columns: 40px 40px 68px;
+    grid-template-columns: 54px 54px 94px;
   }
 }
 
