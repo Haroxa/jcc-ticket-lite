@@ -33,6 +33,12 @@
   .live-rank-setup-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .live-rank-command-actions {
+    padding-left: 0;
+    padding-top: 12px;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
   .live-rank-workbench {
     grid-template-columns: 1fr;
   }
@@ -132,8 +138,8 @@
     grid-template-columns: 1fr;
   }
   .live-rank-board-list {
-    height: 279px;
-    max-height: 279px;
+    height: 304px;
+    max-height: 304px;
     overflow: auto;
   }
   .live-rank-board-head,

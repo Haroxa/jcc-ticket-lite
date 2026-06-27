@@ -2,8 +2,8 @@
   display: grid;
   align-content: start;
   gap: 3px;
-  height: 279px;
-  max-height: 279px;
+  height: 304px;
+  max-height: 304px;
   overflow: auto;
   padding: 6px;
   border: 1px solid var(--line);
@@ -66,7 +66,7 @@
   white-space: nowrap;
 }
 .live-rank-board-empty {
-  min-height: 238px;
+  min-height: 263px;
   display: grid;
   place-items: center;
   padding: 10px;

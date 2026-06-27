@@ -270,6 +270,13 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
               <h3>实时排行</h3>
               <p>按本场总票排序，截图展示时优先截取此区域。</p>
             </div>
+            <div className="live-rank-board-meta">
+              <span>{session ? statusLabel[session.status] : "未开始"}</span>
+              <span>上榜 {normalEntries.length} 人</span>
+              {!!pendingEntries.length && <span>待定 {pendingEntries.length} 人</span>}
+              <span>总票 {entryTotal}</span>
+              {session?.frozenAt && <span>冻结 {formatDateTime(session.frozenAt)}</span>}
+            </div>
           </div>
           <div className="live-rank-countdown-bar">
             <div className={`countdown-card ${session?.status === "countdown" ? "active" : ""}`}>
@@ -283,13 +290,6 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
               <button className="secondary-button" disabled={!canControlCountdown || session?.status === "countdown"} type="button" onClick={() => runAction("resumeCountdown")}>继续</button>
               <button className="secondary-button" disabled={!canControlCountdown} type="button" onClick={() => runAction("resetCountdown")}>重置</button>
             </div>
-          </div>
-          <div className="live-rank-board-meta">
-            <span>{session ? statusLabel[session.status] : "未开始"}</span>
-            <span>上榜 {normalEntries.length} 人</span>
-            {!!pendingEntries.length && <span>待定 {pendingEntries.length} 人</span>}
-            <span>总票 {entryTotal}</span>
-            {session?.frozenAt && <span>冻结 {formatDateTime(session.frozenAt)}</span>}
           </div>
           <div className="live-rank-board-list">
             <div className="live-rank-board-head"><span>排名 / 存票人 / 总票</span><span>明细</span><span>余额</span><span>备注</span></div>
