@@ -32,6 +32,7 @@ const rankStatusLabel: Record<LiveRankEntryStatus, string> = {
 };
 
 type ActiveNumberField = "giftDiamonds" | "ticketUsed" | "ticketDeposit";
+type CountdownStatus = "idle" | "running" | "paused";
 
 type SettlementReviewRow = {
   id: string;
@@ -56,24 +57,12 @@ type LiveRankingPageProps = {
 function currentTitle() {
   const now = new Date();
   const pad = (value: number) => String(value).padStart(2, "0");
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} 结算窗口`;
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())} 结算窗口`;
 }
 
 function positiveInt(value: string) {
   const next = Number(value || 0);
   return Number.isInteger(next) && next >= 0 ? next : 0;
-}
-
-function remainingSeconds(session: LiveRankSession | null) {
-  if (!session?.countdownEndsAt || session.status !== "countdown") return 0;
-  return Math.max(0, Math.floor((new Date(session.countdownEndsAt).getTime() - Date.now()) / 1000));
-}
-
-function countdownDisplaySeconds(session: LiveRankSession | null, fallbackSeconds: number) {
-  if (!session) return fallbackSeconds;
-  if (session.status === "countdown") return remainingSeconds(session);
-  if (session.status === "live") return session.countdownSeconds || fallbackSeconds;
-  return 0;
 }
 
 function formatRemaining(seconds: number) {
@@ -98,10 +87,12 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
   const [title, setTitle] = useState(currentTitle());
   const [sessionNote, setSessionNote] = useState("");
   const [countdownSeconds, setCountdownSeconds] = useState(180);
+  const [countdownLeft, setCountdownLeft] = useState(180);
+  const [countdownStatus, setCountdownStatus] = useState<CountdownStatus>("idle");
   const [notice, setNotice] = useState("");
-  const [, setTick] = useState(0);
   const [activeNumberField, setActiveNumberField] = useState<ActiveNumberField>("giftDiamonds");
   const [showSettlementReview, setShowSettlementReview] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const selectedPerson = people.find((person) => person.id === personId);
   const sortedEntries = useMemo(() => [...entries].sort((a, b) => b.score - a.score || a.updatedAt.localeCompare(b.updatedAt) || a.personName.localeCompare(b.personName)), [entries]);
@@ -136,9 +127,9 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
     return rows;
   }, [sortedEntries]);
   const entryTotal = sortedEntries.reduce((sum, entry) => sum + entry.score, 0);
-  const countdownDisplay = countdownDisplaySeconds(session, countdownSeconds);
+  const countdownDisplay = countdownStatus === "idle" ? countdownSeconds : countdownLeft;
   const canEditSession = !!session && session.status !== "settled" && session.status !== "cancelled" && canWrite(account);
-  const canControlCountdown = canEditSession && (session.status === "live" || session.status === "countdown");
+  const canControlCountdown = canEditSession;
   const previewScore = positiveInt(giftDiamonds) + positiveInt(ticketUsed) - positiveInt(ticketDeposit);
   const previewBalance = selectedPerson ? selectedPerson.balance - positiveInt(ticketUsed) + positiveInt(ticketDeposit) : 0;
 
@@ -162,6 +153,8 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
     }
     setSession(result.data.session);
     setEntries(result.data.entries);
+    setCountdownStatus("idle");
+    setCountdownLeft(countdownSeconds);
     setNotice("");
   }
 
@@ -173,10 +166,23 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
   }, []);
 
   useEffect(() => {
-    if (!session || session.status !== "countdown") return;
-    const timer = window.setInterval(() => setTick((value) => value + 1), 1000);
+    if (countdownStatus !== "running") return;
+    const timer = window.setInterval(() => {
+      setCountdownLeft((value) => {
+        if (value <= 1) {
+          window.clearInterval(timer);
+          setCountdownStatus("idle");
+          return 0;
+        }
+        return value - 1;
+      });
+    }, 1000);
     return () => window.clearInterval(timer);
-  }, [session?.id, session?.status]);
+  }, [countdownStatus]);
+
+  useEffect(() => {
+    if (countdownStatus === "idle") setCountdownLeft(countdownSeconds);
+  }, [countdownSeconds, countdownStatus]);
 
   async function createSession() {
     if (!title.trim()) {
@@ -255,38 +261,29 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
     await loadSession(session.id);
   }
 
-  function patchActiveSession(patch: Partial<LiveRankSession>) {
-    setSession((current) => current ? { ...current, ...patch } : current);
-    setSessions((items) => items.map((item) => item.id === session?.id ? { ...item, ...patch } : item));
+  function startCountdown() {
+    setCountdownLeft(countdownSeconds);
+    setCountdownStatus("running");
   }
 
-  async function runAction(action: "startCountdown" | "pauseCountdown" | "resumeCountdown" | "resetCountdown" | "clearEntries" | "freeze" | "end" | "settle" | "cancel") {
+  function pauseCountdown() {
+    setCountdownStatus("paused");
+  }
+
+  function resumeCountdown() {
+    if (countdownLeft > 0) setCountdownStatus("running");
+  }
+
+  function resetCountdown() {
+    setCountdownLeft(countdownSeconds);
+    setCountdownStatus("idle");
+  }
+
+  async function runAction(action: "clearEntries" | "settle") {
     if (!session) return;
-    const localRemaining = Math.max(1, countdownDisplay);
     const result = await liveRankAction(session.id, { action, countdownSeconds });
     if (!result.ok) {
       setNotice(result.message);
-      return;
-    }
-    if (action === "startCountdown" || action === "resumeCountdown") {
-      const seconds = action === "resumeCountdown" ? (session.countdownSeconds || countdownSeconds) : countdownSeconds;
-      patchActiveSession({
-        status: "countdown",
-        countdownSeconds: seconds,
-        countdownStartedAt: new Date().toISOString(),
-        countdownEndsAt: new Date(Date.now() + seconds * 1000).toISOString()
-      });
-      setNotice("倒计时已开始。");
-      return;
-    }
-    if (action === "pauseCountdown") {
-      patchActiveSession({ status: "live", countdownSeconds: localRemaining, countdownStartedAt: "", countdownEndsAt: "" });
-      setNotice("倒计时已暂停。");
-      return;
-    }
-    if (action === "resetCountdown") {
-      patchActiveSession({ status: "live", countdownSeconds, countdownStartedAt: "", countdownEndsAt: "" });
-      setNotice("倒计时已重置。");
       return;
     }
     if (action === "clearEntries") {
@@ -312,6 +309,11 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
     await runAction("settle");
   }
 
+  async function confirmClearEntries() {
+    setShowClearConfirm(false);
+    await runAction("clearEntries");
+  }
+
   return (
     <div className="live-rank-layout">
       <section className="panel live-rank-hero compact">
@@ -333,7 +335,7 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
         <div className="live-rank-command-actions">
           <div className="panel-header compact"><h3>窗口操作</h3><span>清空草稿或审核结算</span></div>
           <div className="live-rank-control-grid">
-            <button className="secondary-button danger-lite-button" disabled={!canEditSession} type="button" onClick={() => runAction("clearEntries")}>清空窗口记录</button>
+            <button className="secondary-button danger-lite-button" disabled={!canEditSession} type="button" onClick={() => setShowClearConfirm(true)}>清空窗口记录</button>
             <button className="primary-button" disabled={!canEditSession} type="button" onClick={() => setShowSettlementReview(true)}>确认结算</button>
           </div>
         </div>
@@ -355,16 +357,16 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
             </div>
           </div>
           <div className="live-rank-countdown-bar">
-            <div className={`countdown-card ${session?.status === "countdown" ? "active" : ""}`}>
-              <span>{session?.status === "countdown" ? "定榜倒计时" : "倒计时"}</span>
+            <div className={`countdown-card ${countdownStatus === "running" ? "active" : ""}`}>
+              <span>{countdownStatus === "running" ? "窗口倒计时" : countdownStatus === "paused" ? "倒计时已暂停" : "倒计时"}</span>
               <strong>{formatRemaining(countdownDisplay)}</strong>
             </div>
             <label>秒数<input value={countdownSeconds} onChange={(event) => setCountdownSeconds(Math.max(10, Number(event.target.value || 180)))} inputMode="numeric" /></label>
             <div className="live-rank-control-grid inline">
-              <button className="secondary-button" disabled={!canControlCountdown || session?.status === "countdown"} type="button" onClick={() => runAction("startCountdown")}>开始</button>
-              <button className="secondary-button" disabled={!canControlCountdown || session?.status !== "countdown"} type="button" onClick={() => runAction("pauseCountdown")}>暂停</button>
-              <button className="secondary-button" disabled={!canControlCountdown || session?.status === "countdown"} type="button" onClick={() => runAction("resumeCountdown")}>继续</button>
-              <button className="secondary-button" disabled={!canControlCountdown} type="button" onClick={() => runAction("resetCountdown")}>重置</button>
+              <button className="secondary-button" disabled={!canControlCountdown || countdownStatus === "running"} type="button" onClick={startCountdown}>开始</button>
+              <button className="secondary-button" disabled={!canControlCountdown || countdownStatus !== "running"} type="button" onClick={pauseCountdown}>暂停</button>
+              <button className="secondary-button" disabled={!canControlCountdown || countdownStatus !== "paused"} type="button" onClick={resumeCountdown}>继续</button>
+              <button className="secondary-button" disabled={!canControlCountdown} type="button" onClick={resetCountdown}>重置</button>
             </div>
           </div>
           <div className="live-rank-board-list">
@@ -447,6 +449,18 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
             <div className="modal-actions button-row">
               <button className="secondary-button" type="button" onClick={() => setShowSettlementReview(false)}>返回修改</button>
               <button className="primary-button" type="button" onClick={confirmSettlement}>确认写入正式记录</button>
+            </div>
+          </section>
+        </div>
+      )}
+      {showClearConfirm && (
+        <div className="modal-backdrop" role="presentation">
+          <section className="modal-card" role="dialog" aria-modal="true" aria-label="清空窗口记录">
+            <h3>清空当前窗口记录？</h3>
+            <p className="muted">这会删除当前窗口里的排行草稿和待定记录，不会影响已经写入的正式存票记录。</p>
+            <div className="modal-actions button-row">
+              <button className="secondary-button" type="button" onClick={() => setShowClearConfirm(false)}>取消</button>
+              <button className="secondary-button danger-lite-button" type="button" onClick={confirmClearEntries}>确认清空</button>
             </div>
           </section>
         </div>
