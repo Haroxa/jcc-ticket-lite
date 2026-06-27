@@ -26,6 +26,7 @@
   grid-template-columns: minmax(0, 1fr) minmax(360px, 0.38fr);
   gap: 16px;
   align-items: start;
+  padding: 14px 16px;
 }
 .live-rank-command-main,
 .live-rank-command-actions {
@@ -50,8 +51,22 @@
   min-height: 42px;
 }
 .live-rank-command-actions {
+  min-height: 100%;
   padding-left: 16px;
   border-left: 1px solid var(--line);
+}
+.live-rank-command .primary-button,
+.live-rank-command .secondary-button {
+  min-height: 42px;
+}
+.danger-lite-button {
+  color: #9f3a0c;
+  background: #fffaf3;
+  border-color: #ead2b6;
+}
+.danger-lite-button:hover {
+  border-color: #d9a56a;
+  background: #fff6e8;
 }
 .live-rank-hero {
   display: grid;

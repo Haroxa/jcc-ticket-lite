@@ -33,6 +33,16 @@ const rankStatusLabel: Record<LiveRankEntryStatus, string> = {
 
 type ActiveNumberField = "giftDiamonds" | "ticketUsed" | "ticketDeposit";
 
+type SettlementReviewRow = {
+  id: string;
+  personName: string;
+  type: "存票" | "取票";
+  amount: number;
+  before: number;
+  after: number;
+  status: string;
+};
+
 const activeFieldLabel: Record<ActiveNumberField, string> = {
   giftDiamonds: "礼物钻",
   ticketUsed: "取票",
@@ -91,11 +101,40 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
   const [notice, setNotice] = useState("");
   const [, setTick] = useState(0);
   const [activeNumberField, setActiveNumberField] = useState<ActiveNumberField>("giftDiamonds");
+  const [showSettlementReview, setShowSettlementReview] = useState(false);
 
   const selectedPerson = people.find((person) => person.id === personId);
   const sortedEntries = useMemo(() => [...entries].sort((a, b) => b.score - a.score || a.updatedAt.localeCompare(b.updatedAt) || a.personName.localeCompare(b.personName)), [entries]);
   const normalEntries = useMemo(() => sortedEntries.filter((entry) => entry.rankStatus === "normal"), [sortedEntries]);
   const pendingEntries = useMemo(() => sortedEntries.filter((entry) => entry.rankStatus !== "normal"), [sortedEntries]);
+  const settlementReviewRows = useMemo(() => {
+    const rows: SettlementReviewRow[] = [];
+    sortedEntries.forEach((entry) => {
+      if (entry.ticketUsed > 0) {
+        rows.push({
+          id: `${entry.id}-withdraw`,
+          personName: entry.personName,
+          type: "取票",
+          amount: entry.ticketUsed,
+          before: entry.currentBalance,
+          after: entry.currentBalance - entry.ticketUsed,
+          status: rankStatusLabel[entry.rankStatus]
+        });
+      }
+      if (entry.ticketDeposit > 0) {
+        rows.push({
+          id: `${entry.id}-deposit`,
+          personName: entry.personName,
+          type: "存票",
+          amount: entry.ticketDeposit,
+          before: entry.currentBalance - entry.ticketUsed,
+          after: entry.currentBalance - entry.ticketUsed + entry.ticketDeposit,
+          status: rankStatusLabel[entry.rankStatus]
+        });
+      }
+    });
+    return rows;
+  }, [sortedEntries]);
   const entryTotal = sortedEntries.reduce((sum, entry) => sum + entry.score, 0);
   const countdownDisplay = countdownDisplaySeconds(session, countdownSeconds);
   const canEditSession = !!session && session.status !== "settled" && session.status !== "cancelled" && canWrite(account);
@@ -268,6 +307,11 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
     await loadSessions(session.id);
   }
 
+  async function confirmSettlement() {
+    setShowSettlementReview(false);
+    await runAction("settle");
+  }
+
   return (
     <div className="live-rank-layout">
       <section className="panel live-rank-hero compact">
@@ -280,17 +324,17 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
 
       <section className="panel live-rank-command">
         <div className="live-rank-command-main">
-          <div className="panel-header compact"><h3>当前窗口</h3><span>选择历史窗口或重新开始</span></div>
+          <div className="panel-header compact"><h3>当前窗口</h3><span>选择历史窗口或新建窗口</span></div>
           <div className="live-rank-setup-row">
             <label>窗口<select value={activeSessionId} onChange={(event) => { setActiveSessionId(event.target.value); void loadSession(event.target.value); }}><option value="">选择历史窗口</option>{sessions.map((item) => <option key={item.id} value={item.id}>{item.title} · {statusLabel[item.status]}</option>)}</select></label>
-            <button className="primary-button" disabled={!canWrite(account)} type="button" onClick={createSession}>重置窗口</button>
+            <button className="secondary-button" disabled={!canWrite(account)} type="button" onClick={createSession}>新建窗口</button>
           </div>
         </div>
         <div className="live-rank-command-actions">
-          <div className="panel-header compact"><h3>窗口操作</h3><span>清空草稿或写入正式记录</span></div>
+          <div className="panel-header compact"><h3>窗口操作</h3><span>清空草稿或审核结算</span></div>
           <div className="live-rank-control-grid">
-            <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("clearEntries")}>清空记录</button>
-            <button className="primary-button" disabled={!canEditSession} type="button" onClick={() => runAction("settle")}>确认结算</button>
+            <button className="secondary-button danger-lite-button" disabled={!canEditSession} type="button" onClick={() => runAction("clearEntries")}>清空窗口记录</button>
+            <button className="primary-button" disabled={!canEditSession} type="button" onClick={() => setShowSettlementReview(true)}>确认结算</button>
           </div>
         </div>
       </section>
@@ -379,6 +423,34 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
           </section>
         </aside>
       </div>
+      {showSettlementReview && (
+        <div className="modal-backdrop" role="presentation">
+          <section className="modal-card settlement-review-modal" role="dialog" aria-modal="true" aria-label="确认结算">
+            <div className="panel-header compact">
+              <h3>确认写入正式记录</h3>
+              <span>{settlementReviewRows.length} 条存取流水</span>
+            </div>
+            <p className="muted">请核对当前窗口会写入正式存票记录的取票和存票流水。礼物钻只参与本窗口排行，不会写入存票记录。</p>
+            <div className="settlement-review-table">
+              <div className="settlement-review-head"><span>存票人</span><span>类型</span><span>数量</span><span>余额变化</span><span>状态</span></div>
+              {settlementReviewRows.map((row) => (
+                <div className={`settlement-review-row ${row.type === "存票" ? "deposit" : "withdraw"}`} key={row.id}>
+                  <strong>{row.personName}</strong>
+                  <span>{row.type}</span>
+                  <span>{row.amount}</span>
+                  <span>{row.before} -&gt; {row.after}</span>
+                  <span>{row.status}</span>
+                </div>
+              ))}
+              {!settlementReviewRows.length && <div className="settlement-review-empty">当前窗口没有取票或存票流水，确认后不会新增正式存票记录。</div>}
+            </div>
+            <div className="modal-actions button-row">
+              <button className="secondary-button" type="button" onClick={() => setShowSettlementReview(false)}>返回修改</button>
+              <button className="primary-button" type="button" onClick={confirmSettlement}>确认写入正式记录</button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

@@ -62,8 +62,8 @@ input, select, textarea {
   top: calc(100% + 6px);
   z-index: 6;
   display: none;
-  gap: 6px;
-  max-height: 286px;
+  gap: 4px;
+  max-height: 232px;
   overflow: auto;
   padding: 8px;
   border: 1px solid var(--line);
@@ -76,9 +76,11 @@ input, select, textarea {
 }
 .person-picker-list button {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(88px, auto);
   gap: 10px;
-  min-height: 52px;
-  padding: 8px 10px;
+  align-items: center;
+  min-height: 40px;
+  padding: 7px 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--text);
@@ -86,12 +88,27 @@ input, select, textarea {
   text-align: left;
 }
 .person-picker-list button span {
+  min-width: 0;
   color: var(--muted);
   font-size: 13px;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.person-picker-list button strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .person-picker-list button.active {
   border-color: var(--accent);
   background: var(--surface-soft);
+}
+.person-picker-list button:hover {
+  border-color: rgba(18, 128, 116, 0.28);
+  background: #f6fbfa;
 }
 .balance-preview {
   min-height: 38px;

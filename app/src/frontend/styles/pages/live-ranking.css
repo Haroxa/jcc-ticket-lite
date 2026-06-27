@@ -120,6 +120,60 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.settlement-review-modal {
+  width: min(760px, 100%);
+}
+.settlement-review-table {
+  display: grid;
+  gap: 6px;
+  max-height: min(430px, 60vh);
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfc;
+}
+.settlement-review-head,
+.settlement-review-row {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) 72px 72px minmax(110px, 0.9fr) 88px;
+  gap: 8px;
+  align-items: center;
+  min-width: 560px;
+}
+.settlement-review-head {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  padding: 0 6px;
+}
+.settlement-review-row {
+  min-height: 38px;
+  padding: 7px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+}
+.settlement-review-row.deposit {
+  border-left: 4px solid var(--green);
+}
+.settlement-review-row.withdraw {
+  border-left: 4px solid var(--amber);
+}
+.settlement-review-row span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settlement-review-empty {
+  min-height: 92px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  text-align: center;
+}
 .live-rank-table .table-row {
   grid-template-columns: 48px minmax(120px, 1fr) 86px 82px 72px 72px 82px 82px minmax(120px, 1fr);
   gap: 10px;
