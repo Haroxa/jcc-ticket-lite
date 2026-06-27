@@ -252,6 +252,30 @@ textarea { resize: vertical; }
   display: grid;
   gap: 12px;
 }
+.live-rank-command {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.45fr);
+  gap: 16px;
+  align-items: end;
+}
+.live-rank-command-main,
+.live-rank-command-actions {
+  display: grid;
+  gap: 10px;
+}
+.live-rank-setup-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, 0.8fr) minmax(160px, 0.7fr) 132px;
+  gap: 10px;
+  align-items: end;
+}
+.live-rank-setup-row label {
+  margin: 0;
+}
+.live-rank-setup-row button {
+  width: 100%;
+  min-height: 42px;
+}
 .live-rank-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 0.8fr);
@@ -417,12 +441,8 @@ textarea { resize: vertical; }
 .live-rank-control-grid.inline {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
-.live-rank-actions-panel .live-rank-control-grid {
+.live-rank-command-actions .live-rank-control-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-.compact-help {
-  margin: 8px 0 0;
-  font-size: 13px;
 }
 .live-rank-control-grid button,
 .live-rank-setup button,
@@ -996,26 +1016,32 @@ input, select, textarea {
   gap: 10px;
 }
 .live-rank-table.compact .table-row {
-  grid-template-columns: 44px minmax(118px, 1fr) 82px 70px 62px 62px 72px minmax(92px, 0.8fr);
+  grid-template-columns: 42px minmax(96px, 0.9fr) 84px 72px 62px 62px 74px minmax(74px, 0.7fr);
   gap: 8px;
-  min-height: 42px;
-  padding: 7px 10px;
+  min-height: 40px;
+  padding: 0 10px;
+  border-radius: 0;
+  border-width: 0 0 1px;
+  box-shadow: none;
+  background: #fff;
 }
 .live-rank-table.compact .table-row.header {
-  min-height: 36px;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px 8px 0 0;
+  background: var(--surface-soft);
 }
 .live-rank-table.compact .table-row > * {
   min-width: 0;
+  align-self: center;
 }
 .live-rank-table.compact .table-row:not(.header) {
   cursor: pointer;
 }
 .live-rank-table.compact .table-row:not(.header):hover {
-  border-color: rgba(18, 128, 116, 0.28);
   background: #f6fbfa;
 }
 .live-rank-table.compact .table-row.selected {
-  border-color: rgba(18, 128, 116, 0.45);
   background: #edf8f6;
 }
 .live-rank-table.compact .table-row.pending {
@@ -1037,15 +1063,20 @@ input, select, textarea {
   color: var(--text);
 }
 .live-rank-table.compact {
-  height: calc(36px + 7 * 56px);
-  max-height: calc(36px + 7 * 56px);
+  gap: 0;
+  height: calc(38px + 7 * 40px);
+  max-height: calc(38px + 7 * 40px);
   overflow: auto;
-  padding-right: 2px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
 }
 .live-rank-table.compact .table-row.header {
   position: sticky;
   top: 0;
   z-index: 2;
+  border-width: 0 0 1px;
 }
 .accounts-table .table-row {
   grid-template-columns: 44px minmax(128px, 0.75fr) 72px 64px 146px 146px 226px;
@@ -1411,9 +1442,13 @@ input, select, textarea {
   .entry-layout { grid-template-columns: 1fr; }
   .entry-layout .calculator-panel { grid-column: auto; }
   .live-rank-hero,
+  .live-rank-command,
   .live-rank-create,
   .live-rank-actions {
     grid-template-columns: 1fr;
+  }
+  .live-rank-setup-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .live-rank-workbench {
     grid-template-columns: 1fr;
@@ -1462,8 +1497,8 @@ input, select, textarea {
     grid-template-columns: 48px minmax(120px, 1fr) 86px 82px 72px 72px 82px 82px minmax(120px, 1fr);
   }
   .live-rank-table.compact .table-row {
-    min-width: 720px;
-    grid-template-columns: 44px minmax(118px, 1fr) 82px 70px 62px 62px 72px minmax(92px, 0.8fr);
+    min-width: 680px;
+    grid-template-columns: 42px minmax(96px, 0.9fr) 84px 72px 62px 62px 74px minmax(74px, 0.7fr);
   }
   .accounts-table .table-row {
     min-width: 920px;
@@ -1506,6 +1541,11 @@ input, select, textarea {
     justify-self: start;
   }
   .live-rank-countdown-bar {
+    grid-template-columns: 1fr;
+  }
+  .live-rank-command,
+  .live-rank-setup-row,
+  .live-rank-command-actions .live-rank-control-grid {
     grid-template-columns: 1fr;
   }
   .countdown-card {
@@ -1618,6 +1658,34 @@ input, select, textarea {
   .responsive-table {
     overflow: visible;
     padding-bottom: 0;
+  }
+  .responsive-table.live-rank-table.compact {
+    overflow: auto;
+    padding: 0;
+  }
+  .live-rank-table.compact .table-row,
+  .live-rank-table.compact .table-row.header {
+    display: grid;
+    grid-template-columns: 42px minmax(96px, 0.9fr) 84px 72px 62px 62px 74px minmax(74px, 0.7fr);
+    gap: 8px;
+    align-items: center;
+    min-width: 680px;
+    min-height: 40px;
+    padding: 0 10px;
+    border-left-width: 0;
+    border-radius: 0;
+  }
+  .live-rank-table.compact .table-row.header {
+    display: grid;
+    min-height: 38px;
+    border-bottom: 1px solid var(--line);
+  }
+  .live-rank-table.compact .table-row > span,
+  .live-rank-table.compact .table-row > strong {
+    grid-column: auto;
+  }
+  .live-rank-table.compact .section-row {
+    grid-template-columns: minmax(0, 1fr) auto;
   }
   .responsive-table.accounts-table {
     overflow: visible;

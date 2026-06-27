@@ -237,6 +237,26 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
         <span className="live-rank-hero-status">{session ? statusLabel[session.status] : "未开始"}</span>
       </section>
 
+      <section className="panel live-rank-command">
+        <div className="live-rank-command-main">
+          <div className="panel-header compact"><h3>场次设置</h3><span>选择或开始一场</span></div>
+          <div className="live-rank-setup-row">
+            <label>当前场次<select value={activeSessionId} onChange={(event) => { setActiveSessionId(event.target.value); void loadSession(event.target.value); }}><option value="">选择历史场次</option>{sessions.map((item) => <option key={item.id} value={item.id}>{item.title} · {statusLabel[item.status]}</option>)}</select></label>
+            <label>场次名称<input value={title} onChange={(event) => setTitle(event.target.value)} /></label>
+            <label>备注<input value={sessionNote} onChange={(event) => setSessionNote(event.target.value)} placeholder="可选" /></label>
+            <button className="primary-button" disabled={!canWrite(account)} type="button" onClick={createSession}>开始新场次</button>
+          </div>
+        </div>
+        <div className="live-rank-command-actions">
+          <div className="panel-header compact"><h3>场次操作</h3><span>冻结、结束与结算</span></div>
+          <div className="live-rank-control-grid">
+            <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("freeze")}>立即冻结</button>
+            <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("end")}>结束场次</button>
+            <button className="primary-button" disabled={!canEditSession} type="button" onClick={() => runAction("settle")}>确认结算</button>
+          </div>
+        </div>
+      </section>
+
       <div className="live-rank-workbench">
         <section className="panel live-rank-board">
           <div className="live-rank-board-top">
@@ -297,24 +317,6 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
         </section>
 
         <aside className="live-rank-side">
-          <section className="panel live-rank-setup">
-            <div className="panel-header compact"><h3>场次设置</h3><span>选择或开始一场</span></div>
-            <label>当前场次<select value={activeSessionId} onChange={(event) => { setActiveSessionId(event.target.value); void loadSession(event.target.value); }}><option value="">选择历史场次</option>{sessions.map((item) => <option key={item.id} value={item.id}>{item.title} · {statusLabel[item.status]}</option>)}</select></label>
-            <label>场次名称<input value={title} onChange={(event) => setTitle(event.target.value)} /></label>
-            <label>备注<input value={sessionNote} onChange={(event) => setSessionNote(event.target.value)} placeholder="可选" /></label>
-            <button className="primary-button" disabled={!canWrite(account)} type="button" onClick={createSession}>开始新场次</button>
-          </section>
-
-          <section className="panel live-rank-actions-panel">
-            <div className="panel-header compact"><h3>场次操作</h3><span>冻结、结束与结算</span></div>
-            <div className="live-rank-control-grid">
-              <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("freeze")}>立即冻结</button>
-              <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("end")}>结束场次</button>
-              <button className="primary-button" disabled={!canEditSession} type="button" onClick={() => runAction("settle")}>确认结算</button>
-            </div>
-            <p className="muted compact-help">结算前只用于本场排序；确认结算后才会写入正式存取记录。</p>
-          </section>
-
           <section className="panel live-rank-editor">
             <div className="panel-header compact"><h3>录入排行</h3><span>草稿</span></div>
             <PersonSearchSelect
