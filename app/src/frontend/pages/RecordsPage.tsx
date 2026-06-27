@@ -9,6 +9,10 @@ type RecordsPageProps = {
   account: Account;
 };
 
+type RecordModal =
+  | { type: "status"; record: TicketRecord }
+  | null;
+
 function localDate(value = new Date()) {
   const pad = (part: number) => String(part).padStart(2, "0");
   return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
@@ -29,6 +33,7 @@ export function RecordsPage({ account }: RecordsPageProps) {
   const [pageSize, setPageSize] = useState(10);
   const [data, setData] = useState<{ items: TicketRecord[]; total: number; totalPages: number }>({ items: [], total: 0, totalPages: 1 });
   const [notice, setNotice] = useState("");
+  const [modal, setModal] = useState<RecordModal>(null);
 
   async function loadRecords(nextPage = page) {
     const result = await listRecords({ keyword, type, status, dateFrom, dateTo, page: nextPage, pageSize });
@@ -61,18 +66,23 @@ export function RecordsPage({ account }: RecordsPageProps) {
     }
   }
 
-  async function handleToggle(record: TicketRecord) {
+  function closeModal() {
+    setModal(null);
+  }
+
+  async function submitRecordStatus(record: TicketRecord, reason: string) {
     if (!canWrite(account)) {
       setNotice("当前角色不能修改流水状态。");
       return;
     }
     const result = record.status === "normal"
-      ? await voidRecord(record.id, window.prompt("请输入作废原因") || "")
+      ? await voidRecord(record.id, reason)
       : await restoreRecord(record.id);
     if (!result.ok) {
       setNotice(result.message);
       return;
     }
+    closeModal();
     await loadRecords(page);
   }
 
@@ -132,7 +142,7 @@ export function RecordsPage({ account }: RecordsPageProps) {
             <span>{record.type === "deposit" ? "+" : "-"}{record.amount}</span>
             <span>{record.status === "normal" ? "正常" : "作废"}</span>
             {canWrite(account) ? (
-              <button className="secondary-button row-action" type="button" onClick={() => handleToggle(record)}>{record.status === "normal" ? "作废" : "恢复"}</button>
+              <button className="secondary-button row-action" type="button" onClick={() => setModal({ type: "status", record })}>{record.status === "normal" ? "作废" : "恢复"}</button>
             ) : <span className="muted">只读</span>}
           </div>
         ))}
@@ -146,6 +156,47 @@ export function RecordsPage({ account }: RecordsPageProps) {
         onPageChange={(nextPage) => loadRecords(nextPage)}
         onPageSizeChange={(nextPageSize) => { setPageSize(nextPageSize); void listRecords({ keyword, type, status, dateFrom, dateTo, page: 1, pageSize: nextPageSize }).then((result) => { if (result.ok) { setData({ items: result.data.items, total: result.data.total, totalPages: result.data.totalPages }); setPage(result.data.page); setNotice(""); } else setNotice(result.message); }); }}
       />
+      {modal?.type === "status" && <RecordStatusModal record={modal.record} onCancel={closeModal} onSubmit={submitRecordStatus} />}
     </section>
+  );
+}
+
+function RecordStatusModal({ record, onCancel, onSubmit }: {
+  record: TicketRecord;
+  onCancel: () => void;
+  onSubmit: (record: TicketRecord, reason: string) => void;
+}) {
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState("");
+  const isVoiding = record.status === "normal";
+  const actionText = isVoiding ? "作废" : "恢复";
+
+  function handleSubmit() {
+    if (isVoiding && !reason.trim()) {
+      setError("请输入作废原因，方便后续核对。");
+      return;
+    }
+    onSubmit(record, reason.trim());
+  }
+
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="recordStatusTitle">
+        <h3 id="recordStatusTitle">{actionText}存取记录</h3>
+        <p className="muted">
+          {record.personName} · {record.type === "deposit" ? "存入" : "取用"} {record.amount} · {formatLocalMinute(record.recordedAt)}
+        </p>
+        {isVoiding ? (
+          <label>作废原因<textarea value={reason} onChange={(event) => setReason(event.target.value)} rows={3} placeholder="例如：录入错误、重复记录、数量不准确" /></label>
+        ) : (
+          <p className="muted">恢复后该条流水会重新参与余额计算，请确认这条记录有效。</p>
+        )}
+        {error && <p className="notice-text">{error}</p>}
+        <div className="button-row modal-actions">
+          <button className="secondary-button" type="button" onClick={onCancel}>取消</button>
+          <button className="primary-button" type="button" onClick={handleSubmit}>确认{actionText}</button>
+        </div>
+      </section>
+    </div>
   );
 }
