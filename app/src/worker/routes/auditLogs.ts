@@ -10,8 +10,19 @@ type AuditLogRow = {
   target_type: string;
   target_id: string | null;
   summary: string;
+  before_json: string | null;
+  after_json: string | null;
   created_at: string;
 };
+
+function parseJson(value: string | null) {
+  if (!value) return null;
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return null;
+  }
+}
 
 function mapLog(row: AuditLogRow) {
   return {
@@ -22,6 +33,8 @@ function mapLog(row: AuditLogRow) {
     targetType: row.target_type,
     targetId: row.target_id,
     summary: row.summary,
+    beforeData: parseJson(row.before_json),
+    afterData: parseJson(row.after_json),
     createdAt: row.created_at
   };
 }
@@ -60,7 +73,7 @@ export async function handleAuditLogs(request: Request, env: Env) {
   const total = totalRow?.total || 0;
   const offset = (page - 1) * pageSize;
   const result = await env.DB.prepare(`
-    SELECT id, actor_account_id, actor_name, action, target_type, target_id, summary, created_at
+    SELECT id, actor_account_id, actor_name, action, target_type, target_id, summary, before_json, after_json, created_at
     FROM audit_logs
     ${whereSql}
     ORDER BY created_at DESC

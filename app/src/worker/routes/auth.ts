@@ -1,12 +1,18 @@
 import type { Account, Env } from "../types";
 import { randomId, createToken, hashPassword, sha256, verifyPassword } from "../utils/crypto";
-import { clearSessionCookie, readJson, sessionCookie } from "../utils/http";
+import { clearSessionCookie, getCookie, readJson, sessionCookie } from "../utils/http";
 import { fail, json, ok, unauthorized } from "../utils/response";
 import { getCurrentAccount, sessionMaxAgeSeconds, toSessionAccount } from "../services/authService";
+import { writeAuditLog } from "../services/auditService";
 
 type LoginPayload = {
   username?: string;
   password?: string;
+};
+
+type ChangePasswordPayload = {
+  currentPassword?: string;
+  newPassword?: string;
 };
 
 type SetupPayload = {
@@ -123,4 +129,45 @@ export async function handleMe(request: Request, env: Env) {
   const account = await getCurrentAccount(request, env);
   if (!account) return unauthorized();
   return ok({ account });
+}
+
+export async function handleChangeMyPassword(request: Request, env: Env) {
+  if (request.method !== "PATCH") return fail("请求方式不支持", 405);
+  const account = await getCurrentAccount(request, env);
+  if (!account) return unauthorized();
+
+  const payload = await readJson<ChangePasswordPayload>(request);
+  if (!payload?.currentPassword || !payload.newPassword) return fail("当前密码和新密码不能为空");
+  if (payload.newPassword.length < 8) return fail("新密码至少需要 8 位");
+  if (payload.currentPassword === payload.newPassword) return fail("新密码不能和当前密码相同");
+
+  const current = await env.DB.prepare(`
+    SELECT id, username, password_hash, display_name, role, status
+    FROM accounts
+    WHERE id = ?
+    LIMIT 1
+  `).bind(account.id).first<Account & { password_hash: string }>();
+  if (!current || current.status !== "active") return unauthorized();
+
+  const verified = await verifyPassword(payload.currentPassword, current.password_hash);
+  if (!verified) return fail("当前密码不正确", 403);
+
+  const now = nowIso();
+  await env.DB.prepare(`
+    UPDATE accounts
+    SET password_hash = ?, updated_at = ?
+    WHERE id = ?
+  `).bind(await hashPassword(payload.newPassword), now, account.id).run();
+
+  const token = getCookie(request, "jcc_session");
+  if (token) {
+    await env.DB.prepare(`
+      UPDATE sessions
+      SET revoked_at = ?
+      WHERE account_id = ? AND token_hash != ? AND revoked_at IS NULL
+    `).bind(now, account.id, await sha256(token)).run();
+  }
+
+  await writeAuditLog(env, account, "修改自己密码", "account", account.id, "当前账号修改登录密码");
+  return ok({ updated: true });
 }

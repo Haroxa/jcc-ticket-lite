@@ -798,7 +798,7 @@ input, select, textarea {
   gap: 10px;
 }
 .audit-table .table-row {
-  grid-template-columns: 52px minmax(150px, 1fr) minmax(100px, 0.8fr) minmax(96px, 0.8fr) minmax(88px, 0.8fr) minmax(220px, 1.6fr);
+  grid-template-columns: 52px minmax(150px, 1fr) minmax(100px, 0.8fr) minmax(96px, 0.8fr) minmax(88px, 0.8fr) minmax(220px, 1.6fr) 70px;
 }
 .accounts-table .table-row {
   grid-template-columns: 44px minmax(128px, 0.75fr) 72px 64px 146px 146px 226px;
@@ -956,6 +956,9 @@ input, select, textarea {
   background: var(--surface);
   box-shadow: var(--shadow);
 }
+.audit-detail-modal {
+  width: min(760px, 100%);
+}
 .modal-card h3,
 .modal-card p {
   margin: 0;
@@ -982,6 +985,45 @@ input, select, textarea {
 .confirm-grid strong {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+.audit-change-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.audit-change-grid div {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+.audit-change-grid h4 {
+  margin: 0;
+  font-size: 14px;
+}
+.audit-change-grid pre {
+  min-height: 120px;
+  max-height: 260px;
+  margin: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfc;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+}
+.check-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+.check-row input {
+  width: auto;
 }
 .bottom-nav { display: none; }
 .public-shell {
@@ -1145,8 +1187,8 @@ input, select, textarea {
     grid-template-columns: 52px minmax(150px, 1.2fr) minmax(120px, 1fr) minmax(70px, 0.7fr) minmax(70px, 0.7fr) minmax(70px, 0.7fr) minmax(76px, auto);
   }
   .audit-table .table-row {
-    min-width: 880px;
-    grid-template-columns: 52px minmax(150px, 1fr) minmax(110px, 0.8fr) minmax(96px, 0.8fr) minmax(90px, 0.8fr) minmax(240px, 1.6fr);
+    min-width: 940px;
+    grid-template-columns: 52px minmax(150px, 1fr) minmax(110px, 0.8fr) minmax(96px, 0.8fr) minmax(90px, 0.8fr) minmax(240px, 1.6fr) 70px;
   }
   .accounts-table .table-row {
     min-width: 920px;
@@ -1180,6 +1222,7 @@ input, select, textarea {
   .history-profile { grid-template-columns: 1fr; }
   .metric-card strong { font-size: 24px; }
   .panel { padding: 12px; }
+  .audit-change-grid { grid-template-columns: 1fr; }
   .filter-panel { grid-template-columns: 1fr; }
   .account-toolbar {
     align-items: stretch;

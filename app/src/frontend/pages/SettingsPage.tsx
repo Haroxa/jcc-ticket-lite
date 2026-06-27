@@ -1,4 +1,5 @@
-import type { Account } from "../api";
+import { useState } from "react";
+import { changeMyPassword, type Account } from "../api";
 import type { PageKey } from "../App";
 import { canAdmin, canAudit } from "../utils/permissions";
 
@@ -8,6 +9,19 @@ type SettingsPageProps = {
 };
 
 export function SettingsPage({ account, onNavigate }: SettingsPageProps) {
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [notice, setNotice] = useState("");
+
+  async function submitPassword(payload: { currentPassword: string; newPassword: string }) {
+    const result = await changeMyPassword(payload);
+    if (!result.ok) {
+      setNotice(result.message);
+      return;
+    }
+    setShowPasswordModal(false);
+    setNotice("密码已修改，请妥善保存新密码。");
+  }
+
   return (
     <div className="two-column">
       <section className="panel stacked">
@@ -23,6 +37,8 @@ export function SettingsPage({ account, onNavigate }: SettingsPageProps) {
         <span>显示名称：{account.displayName}</span>
         <span>登录账号：{account.username}</span>
         <span>当前权限：{account.role === "admin" ? "管理员" : account.role === "operator" ? "操作员" : "只读成员"}</span>
+        <button className="secondary-button" type="button" onClick={() => setShowPasswordModal(true)}>修改密码</button>
+        {notice && <p className="notice-text">{notice}</p>}
       </section>
       <section className="panel stacked">
         <h3>数据规则</h3>
@@ -49,6 +65,56 @@ export function SettingsPage({ account, onNavigate }: SettingsPageProps) {
         {canAudit(account) && <button className="secondary-button" type="button" onClick={() => onNavigate("auditLogs")}>查看操作日志</button>}
         {canAdmin(account) && <button className="secondary-button" type="button" onClick={() => onNavigate("accounts")}>管理账号</button>}
         <button className="secondary-button" type="button" onClick={() => window.open("/public-board", "_blank", "noopener,noreferrer")}>打开公开存票榜</button>
+      </section>
+      {showPasswordModal && <ChangePasswordModal onCancel={() => setShowPasswordModal(false)} onSubmit={submitPassword} />}
+    </div>
+  );
+}
+
+function ChangePasswordModal({ onCancel, onSubmit }: {
+  onCancel: () => void;
+  onSubmit: (payload: { currentPassword: string; newPassword: string }) => void;
+}) {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+
+  function handleSubmit() {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setError("请完整填写当前密码和新密码。");
+      return;
+    }
+    if (newPassword.length < 8) {
+      setError("新密码至少需要 8 位。");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("两次输入的新密码不一致。");
+      return;
+    }
+    if (currentPassword === newPassword) {
+      setError("新密码不能和当前密码相同。");
+      return;
+    }
+    onSubmit({ currentPassword, newPassword });
+  }
+
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="changePasswordTitle">
+        <h3 id="changePasswordTitle">修改密码</h3>
+        <p className="muted">修改成功后，其它设备上的登录会失效，当前设备可继续使用。</p>
+        <label>当前密码<input autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} type={showPassword ? "text" : "password"} /></label>
+        <label>新密码<input autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} type={showPassword ? "text" : "password"} placeholder="至少 8 位" /></label>
+        <label>确认新密码<input autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} type={showPassword ? "text" : "password"} /></label>
+        <label className="check-row"><input checked={showPassword} onChange={(event) => setShowPassword(event.target.checked)} type="checkbox" />显示密码</label>
+        {error && <p className="notice-text">{error}</p>}
+        <div className="button-row modal-actions">
+          <button className="secondary-button" type="button" onClick={onCancel}>取消</button>
+          <button className="primary-button" type="button" onClick={handleSubmit}>确认修改</button>
+        </div>
       </section>
     </div>
   );

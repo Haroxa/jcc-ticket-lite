@@ -69,6 +69,8 @@ export type AuditLog = {
   targetType: string;
   targetId: string | null;
   summary: string;
+  beforeData: unknown;
+  afterData: unknown;
   createdAt: string;
 };
 
@@ -115,6 +117,13 @@ export function logout() {
   return requestJson<Record<string, never>>("/api/auth/logout", {
     method: "POST",
     body: JSON.stringify({})
+  });
+}
+
+export function changeMyPassword(payload: { currentPassword: string; newPassword: string }) {
+  return requestJson<{ updated: boolean }>("/api/auth/password", {
+    method: "PATCH",
+    body: JSON.stringify(payload)
   });
 }
 

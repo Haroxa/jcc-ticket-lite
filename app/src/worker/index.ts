@@ -1,5 +1,5 @@
 import { handleHealth } from "./routes/health";
-import { handleLogin, handleLogout, handleMe, handleSetupAdmin } from "./routes/auth";
+import { handleChangeMyPassword, handleLogin, handleLogout, handleMe, handleSetupAdmin } from "./routes/auth";
 import { handlePeople, handlePersonDetail, handlePersonStatus, handlePublicBoard } from "./routes/people";
 import { handleDashboard, handleRecords, handleRestoreRecord, handleVoidRecord } from "./routes/records";
 import { handleAuditLogs } from "./routes/auditLogs";
@@ -29,6 +29,10 @@ export default {
 
     if (url.pathname === "/api/auth/me") {
       return handleMe(request, env);
+    }
+
+    if (url.pathname === "/api/auth/password") {
+      return handleChangeMyPassword(request, env);
     }
 
     if (url.pathname === "/api/people") {
