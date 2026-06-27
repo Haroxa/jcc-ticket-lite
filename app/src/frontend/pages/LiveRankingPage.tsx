@@ -186,7 +186,7 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
 
   return (
     <div className="live-rank-layout">
-      <section className="panel live-rank-hero">
+      <section className="panel live-rank-hero compact">
         <div>
           <h3>{session?.title || "场次排行"}</h3>
           <p className="muted">礼物钻 + 取票 - 存票 = 本场总票；确认结算前不影响长期余额。</p>
@@ -199,71 +199,88 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
         </div>
       </section>
 
-      <section className="panel live-rank-create">
-        <label>场次<select value={activeSessionId} onChange={(event) => { setActiveSessionId(event.target.value); void loadSession(event.target.value); }}><option value="">选择场次</option>{sessions.map((item) => <option key={item.id} value={item.id}>{item.title} · {statusLabel[item.status]}</option>)}</select></label>
-        <label>新场次名称<input value={title} onChange={(event) => setTitle(event.target.value)} /></label>
-        <label>备注<input value={sessionNote} onChange={(event) => setSessionNote(event.target.value)} placeholder="可选" /></label>
-        <button className="primary-button" disabled={!canWrite(account)} type="button" onClick={createSession}>创建场次</button>
-      </section>
-
-      {session && (
-        <section className="panel live-rank-actions">
-          <span>开始：{formatDateTime(session.startedAt)}{session.frozenAt ? ` · 冻结：${formatDateTime(session.frozenAt)}` : ""}{session.settledAt ? ` · 结算：${formatDateTime(session.settledAt)}` : ""}</span>
-          <label>倒计时秒数<input value={countdownSeconds} onChange={(event) => setCountdownSeconds(Math.max(10, Number(event.target.value || 180)))} inputMode="numeric" /></label>
-          <div className="button-row">
-            <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("startCountdown")}>开始倒计时</button>
-            <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("freeze")}>立即冻结</button>
-            <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("end")}>结束场次</button>
-            <button className="primary-button" disabled={!canEditSession} type="button" onClick={() => runAction("settle")}>确认结算</button>
+      <div className="live-rank-workbench">
+        <section className="panel live-rank-board">
+          <div className="live-rank-board-top">
+            <div>
+              <h3>实时排行</h3>
+              <p>按本场总票排序，截图展示时优先截取此区域。</p>
+            </div>
+            <div className={`countdown-card ${session?.status === "countdown" ? "active" : ""}`}>
+              <span>{session?.status === "countdown" ? "定榜倒计时" : "倒计时"}</span>
+              <strong>{formatRemaining(remaining)}</strong>
+            </div>
+          </div>
+          <div className="live-rank-board-meta">
+            <span>{session ? statusLabel[session.status] : "未开始"}</span>
+            <span>上榜 {entries.length} 人</span>
+            <span>总票 {entryTotal}</span>
+            {session?.frozenAt && <span>冻结 {formatDateTime(session.frozenAt)}</span>}
+          </div>
+          <div className="responsive-table live-rank-table compact">
+            <div className="table-row header"><span>排名</span><span>存票人</span><span>本场总票</span><span>礼物钻</span><span>取票</span><span>存票</span><span>结算后</span><span>备注</span></div>
+            {sortedEntries.map((entry, index) => (
+              <div className="table-row" key={entry.id}>
+                <span className="row-no" data-label="排名">{index + 1}</span>
+                <strong data-label="存票人">{entry.personName}</strong>
+                <span data-label="本场总票">{entry.score}</span>
+                <span data-label="礼物钻">{entry.giftDiamonds}</span>
+                <span data-label="取票">{entry.ticketUsed}</span>
+                <span data-label="存票">{entry.ticketDeposit}</span>
+                <span data-label="结算后">{entry.projectedBalance}</span>
+                <span data-label="备注">{entry.note || "无备注"}</span>
+              </div>
+            ))}
+            {!sortedEntries.length && <EmptyState title="暂无排行记录" description="右侧开始场次后，选择存票人并录入礼物钻、取票或存票。" />}
           </div>
         </section>
-      )}
 
-      <section className="panel live-rank-editor">
-        <div className="panel-header"><h3>录入本场排行</h3><span>保存为草稿，结算后才入账</span></div>
-        <PersonSearchSelect
-          people={people}
-          selectedId={personId}
-          value={personKeyword}
-          emptyText="没有匹配的正常存票人。"
-          onInputChange={(value) => { setPersonKeyword(value); setPersonId(""); }}
-          onSelect={selectPerson}
-        />
-        <div className="live-rank-form-grid">
-          <label>礼物钻<input value={giftDiamonds} onChange={(event) => setGiftDiamonds(event.target.value)} inputMode="numeric" placeholder="0" /></label>
-          <label>取票<input value={ticketUsed} onChange={(event) => setTicketUsed(event.target.value)} inputMode="numeric" placeholder="0" /></label>
-          <label>存票<input value={ticketDeposit} onChange={(event) => setTicketDeposit(event.target.value)} inputMode="numeric" placeholder="0" /></label>
-        </div>
-        <div className={`balance-preview ${previewBalance < 0 ? "danger" : selectedPerson ? "ok" : ""}`}>
-          {selectedPerson ? `本场总票 ${previewScore}，当前余额 ${selectedPerson.balance}，结算后余额 ${previewBalance}。` : "请选择存票人。"}
-        </div>
-        <label>备注<textarea value={note} onChange={(event) => setNote(event.target.value)} rows={2} placeholder="可选" /></label>
-        <div className="button-row">
-          <button className="primary-button" disabled={!canEditSession} type="button" onClick={saveEntry}>保存到本场排行</button>
-        </div>
-        {notice && <p className="notice-text">{notice}</p>}
-      </section>
+        <aside className="live-rank-side">
+          <section className="panel live-rank-setup">
+            <div className="panel-header compact"><h3>场次设置</h3><span>选择或开始一场</span></div>
+            <label>当前场次<select value={activeSessionId} onChange={(event) => { setActiveSessionId(event.target.value); void loadSession(event.target.value); }}><option value="">选择历史场次</option>{sessions.map((item) => <option key={item.id} value={item.id}>{item.title} · {statusLabel[item.status]}</option>)}</select></label>
+            <label>场次名称<input value={title} onChange={(event) => setTitle(event.target.value)} /></label>
+            <label>备注<input value={sessionNote} onChange={(event) => setSessionNote(event.target.value)} placeholder="可选" /></label>
+            <button className="primary-button" disabled={!canWrite(account)} type="button" onClick={createSession}>开始新场次</button>
+          </section>
 
-      <section className="panel">
-        <div className="panel-header"><h3>实时排行</h3><span>按本场总票排序</span></div>
-        <div className="responsive-table live-rank-table">
-          <div className="table-row header"><span>排名</span><span>存票人</span><span>本场总票</span><span>礼物钻</span><span>取票</span><span>存票</span><span>当前余额</span><span>结算后</span><span>备注</span></div>
-          {sortedEntries.map((entry, index) => (
-            <div className="table-row" key={entry.id}>
-              <span className="row-no" data-label="排名">{index + 1}</span>
-              <strong data-label="存票人">{entry.personName}</strong>
-              <span data-label="本场总票">{entry.score}</span>
-              <span data-label="礼物钻">{entry.giftDiamonds}</span>
-              <span data-label="取票">{entry.ticketUsed}</span>
-              <span data-label="存票">{entry.ticketDeposit}</span>
-              <span data-label="当前余额">{entry.currentBalance}</span>
-              <span data-label="结算后">{entry.projectedBalance}</span>
-              <span data-label="备注">{entry.note || "无备注"}</span>
+          {session && (
+            <section className="panel live-rank-control">
+              <div className="panel-header compact"><h3>定榜控制</h3><span>{formatDateTime(session.startedAt)}</span></div>
+              <label>倒计时秒数<input value={countdownSeconds} onChange={(event) => setCountdownSeconds(Math.max(10, Number(event.target.value || 180)))} inputMode="numeric" /></label>
+              <div className="live-rank-control-grid">
+                <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("startCountdown")}>开始倒计时</button>
+                <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("freeze")}>立即冻结</button>
+                <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("end")}>结束场次</button>
+                <button className="primary-button" disabled={!canEditSession} type="button" onClick={() => runAction("settle")}>确认结算</button>
+              </div>
+            </section>
+          )}
+
+          <section className="panel live-rank-editor">
+            <div className="panel-header compact"><h3>录入排行</h3><span>草稿</span></div>
+            <PersonSearchSelect
+              people={people}
+              selectedId={personId}
+              value={personKeyword}
+              emptyText="没有匹配的正常存票人。"
+              onInputChange={(value) => { setPersonKeyword(value); setPersonId(""); }}
+              onSelect={selectPerson}
+            />
+            <div className="live-rank-form-grid">
+              <label>礼物钻<input value={giftDiamonds} onChange={(event) => setGiftDiamonds(event.target.value)} inputMode="numeric" placeholder="0" /></label>
+              <label>取票<input value={ticketUsed} onChange={(event) => setTicketUsed(event.target.value)} inputMode="numeric" placeholder="0" /></label>
+              <label>存票<input value={ticketDeposit} onChange={(event) => setTicketDeposit(event.target.value)} inputMode="numeric" placeholder="0" /></label>
             </div>
-          ))}
-          {!sortedEntries.length && <EmptyState title="暂无排行记录" description="创建场次后，选择存票人并录入礼物钻、取票或存票。" />}
-        </div>
-      </section>
+            <div className={`balance-preview ${previewBalance < 0 ? "danger" : selectedPerson ? "ok" : ""}`}>
+              {selectedPerson ? `本场总票 ${previewScore}，当前余额 ${selectedPerson.balance}，结算后 ${previewBalance}。` : "请选择存票人。"}
+            </div>
+            <label>备注<textarea value={note} onChange={(event) => setNote(event.target.value)} rows={2} placeholder="可选" /></label>
+            <button className="primary-button" disabled={!canEditSession} type="button" onClick={saveEntry}>保存到排行</button>
+            {notice && <p className="notice-text">{notice}</p>}
+          </section>
+        </aside>
+      </div>
     </div>
   );
 }
