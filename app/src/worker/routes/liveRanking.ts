@@ -58,7 +58,7 @@ type UpsertEntryPayload = {
 };
 
 type ActionPayload = {
-  action?: "startCountdown" | "pauseCountdown" | "resumeCountdown" | "resetCountdown" | "freeze" | "end" | "settle" | "cancel";
+  action?: "startCountdown" | "pauseCountdown" | "resumeCountdown" | "resetCountdown" | "clearEntries" | "freeze" | "end" | "settle" | "cancel";
   countdownSeconds?: number;
 };
 
@@ -364,6 +364,19 @@ export async function handleLiveRankAction(request: Request, env: Env, sessionId
     `).bind(seconds, now, session.id).run();
     await writeAuditLog(env, account, "重置场次倒计时", "live_rank_session", session.id, `${session.title} 重置倒计时为 ${seconds} 秒`);
     return ok({ updated: true });
+  }
+
+  if (payload?.action === "clearEntries") {
+    if (session.status === "settled" || session.status === "cancelled") return fail("已结算或已取消的窗口不能清空", 409);
+    const entries = await listSessionEntries(env, session.id);
+    await env.DB.prepare("DELETE FROM live_rank_entries WHERE session_id = ?").bind(session.id).run();
+    await env.DB.prepare(`
+      UPDATE live_rank_sessions
+      SET status = 'live', countdown_started_at = NULL, countdown_ends_at = NULL, frozen_at = NULL, updated_at = ?
+      WHERE id = ?
+    `).bind(now, session.id).run();
+    await writeAuditLog(env, account, "清空结算窗口", "live_rank_session", session.id, `${session.title} 清空 ${entries.length} 条窗口记录`);
+    return ok({ updated: true, clearedCount: entries.length });
   }
 
   if (payload?.action === "freeze") {

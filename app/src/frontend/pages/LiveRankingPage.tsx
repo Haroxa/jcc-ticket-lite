@@ -17,7 +17,7 @@ import { formatDateTime } from "../utils/time";
 import { canWrite } from "../utils/permissions";
 
 const statusLabel: Record<LiveRankSession["status"], string> = {
-  live: "进行中",
+  live: "记录中",
   countdown: "倒计时",
   frozen: "已冻结",
   pending_settlement: "待结算",
@@ -46,7 +46,7 @@ type LiveRankingPageProps = {
 function currentTitle() {
   const now = new Date();
   const pad = (value: number) => String(value).padStart(2, "0");
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} 场次排行`;
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} 结算窗口`;
 }
 
 function positiveInt(value: string) {
@@ -89,7 +89,7 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
   const [sessionNote, setSessionNote] = useState("");
   const [countdownSeconds, setCountdownSeconds] = useState(180);
   const [notice, setNotice] = useState("");
-  const [tick, setTick] = useState(0);
+  const [, setTick] = useState(0);
   const [activeNumberField, setActiveNumberField] = useState<ActiveNumberField>("giftDiamonds");
 
   const selectedPerson = people.find((person) => person.id === personId);
@@ -138,11 +138,6 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
     const timer = window.setInterval(() => setTick((value) => value + 1), 1000);
     return () => window.clearInterval(timer);
   }, [session?.id, session?.status]);
-
-  useEffect(() => {
-    if (tick < 0 || !session || session.status !== "countdown") return;
-    if (remainingSeconds(session) === 0) void runAction("freeze");
-  }, [tick]);
 
   async function createSession() {
     if (!title.trim()) {
@@ -221,15 +216,55 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
     await loadSession(session.id);
   }
 
-  async function runAction(action: "startCountdown" | "pauseCountdown" | "resumeCountdown" | "resetCountdown" | "freeze" | "end" | "settle" | "cancel") {
+  function patchActiveSession(patch: Partial<LiveRankSession>) {
+    setSession((current) => current ? { ...current, ...patch } : current);
+    setSessions((items) => items.map((item) => item.id === session?.id ? { ...item, ...patch } : item));
+  }
+
+  async function runAction(action: "startCountdown" | "pauseCountdown" | "resumeCountdown" | "resetCountdown" | "clearEntries" | "freeze" | "end" | "settle" | "cancel") {
     if (!session) return;
+    const localRemaining = Math.max(1, countdownDisplay);
     const result = await liveRankAction(session.id, { action, countdownSeconds });
     if (!result.ok) {
       setNotice(result.message);
       return;
     }
+    if (action === "startCountdown" || action === "resumeCountdown") {
+      const seconds = action === "resumeCountdown" ? (session.countdownSeconds || countdownSeconds) : countdownSeconds;
+      patchActiveSession({
+        status: "countdown",
+        countdownSeconds: seconds,
+        countdownStartedAt: new Date().toISOString(),
+        countdownEndsAt: new Date(Date.now() + seconds * 1000).toISOString()
+      });
+      setNotice("倒计时已开始。");
+      return;
+    }
+    if (action === "pauseCountdown") {
+      patchActiveSession({ status: "live", countdownSeconds: localRemaining, countdownStartedAt: "", countdownEndsAt: "" });
+      setNotice("倒计时已暂停。");
+      return;
+    }
+    if (action === "resetCountdown") {
+      patchActiveSession({ status: "live", countdownSeconds, countdownStartedAt: "", countdownEndsAt: "" });
+      setNotice("倒计时已重置。");
+      return;
+    }
+    if (action === "clearEntries") {
+      setEntries([]);
+      setPersonId("");
+      setPersonKeyword("");
+      setGiftDiamonds("");
+      setTicketUsed("");
+      setTicketDeposit("");
+      setRankStatus("normal");
+      setNote("");
+      setNotice(`已清空 ${result.data.clearedCount ?? 0} 条窗口记录。`);
+      await loadSessions(session.id);
+      return;
+    }
     if (action === "settle") setNotice(`结算完成，生成 ${result.data.recordCount ?? 0} 条正式流水。`);
-    else setNotice("场次状态已更新。");
+    else setNotice("窗口状态已更新。");
     await loadSessions(session.id);
   }
 
@@ -237,27 +272,24 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
     <div className="live-rank-layout">
       <section className="panel live-rank-hero compact">
         <div>
-          <h3>{session?.title || "场次排行"}</h3>
-          <p className="muted">礼物钻 + 取票 - 存票 = 本场总票；确认结算前不影响长期余额。</p>
+          <h3>{session?.title || "结算窗口"}</h3>
+          <p className="muted">在当前时间窗口记录礼物钻、取票和存票，确认结算后写入正式存取记录。</p>
         </div>
         <span className="live-rank-hero-status">{session ? statusLabel[session.status] : "未开始"}</span>
       </section>
 
       <section className="panel live-rank-command">
         <div className="live-rank-command-main">
-          <div className="panel-header compact"><h3>场次设置</h3><span>选择或开始一场</span></div>
+          <div className="panel-header compact"><h3>当前窗口</h3><span>选择历史窗口或重新开始</span></div>
           <div className="live-rank-setup-row">
-            <label>当前场次<select value={activeSessionId} onChange={(event) => { setActiveSessionId(event.target.value); void loadSession(event.target.value); }}><option value="">选择历史场次</option>{sessions.map((item) => <option key={item.id} value={item.id}>{item.title} · {statusLabel[item.status]}</option>)}</select></label>
-            <label>场次名称<input value={title} onChange={(event) => setTitle(event.target.value)} /></label>
-            <label>备注<input value={sessionNote} onChange={(event) => setSessionNote(event.target.value)} placeholder="可选" /></label>
-            <button className="primary-button" disabled={!canWrite(account)} type="button" onClick={createSession}>开始新场次</button>
+            <label>窗口<select value={activeSessionId} onChange={(event) => { setActiveSessionId(event.target.value); void loadSession(event.target.value); }}><option value="">选择历史窗口</option>{sessions.map((item) => <option key={item.id} value={item.id}>{item.title} · {statusLabel[item.status]}</option>)}</select></label>
+            <button className="primary-button" disabled={!canWrite(account)} type="button" onClick={createSession}>重置窗口</button>
           </div>
         </div>
         <div className="live-rank-command-actions">
-          <div className="panel-header compact"><h3>场次操作</h3><span>冻结、结束与结算</span></div>
+          <div className="panel-header compact"><h3>窗口操作</h3><span>清空草稿或写入正式记录</span></div>
           <div className="live-rank-control-grid">
-            <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("freeze")}>立即冻结</button>
-            <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("end")}>结束场次</button>
+            <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("clearEntries")}>清空记录</button>
             <button className="primary-button" disabled={!canEditSession} type="button" onClick={() => runAction("settle")}>确认结算</button>
           </div>
         </div>
@@ -296,8 +328,8 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
             {normalEntries.map((entry, index) => (
               <button className={`live-rank-board-row ${entry.personId === personId ? "selected" : ""}`} key={entry.id} onClick={() => selectEntry(entry)} type="button">
                 <strong><span className="rank-number">{index + 1}</span><span>{entry.personName} {entry.score}</span></strong>
-                <span>礼物 {entry.giftDiamonds} · 取票 {entry.ticketUsed} · 存票 -{entry.ticketDeposit}</span>
-                <span>{entry.projectedBalance}</span>
+                <span>礼物 {entry.giftDiamonds} · 取票 {entry.ticketUsed} · 存票 {entry.ticketDeposit}</span>
+                <span>{entry.currentBalance === entry.projectedBalance ? entry.projectedBalance : `${entry.currentBalance} -> ${entry.projectedBalance}`}</span>
                 <span>{entry.note || "无备注"}</span>
               </button>
             ))}

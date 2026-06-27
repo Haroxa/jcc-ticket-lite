@@ -244,8 +244,8 @@ export function upsertLiveRankEntry(payload: {
   });
 }
 
-export function liveRankAction(sessionId: string, payload: { action: "startCountdown" | "pauseCountdown" | "resumeCountdown" | "resetCountdown" | "freeze" | "end" | "settle" | "cancel"; countdownSeconds?: number }) {
-  return requestJson<{ updated?: boolean; recordCount?: number }>(`/api/live-rank-sessions/${sessionId}/action`, {
+export function liveRankAction(sessionId: string, payload: { action: "startCountdown" | "pauseCountdown" | "resumeCountdown" | "resetCountdown" | "clearEntries" | "freeze" | "end" | "settle" | "cancel"; countdownSeconds?: number }) {
+  return requestJson<{ updated?: boolean; recordCount?: number; clearedCount?: number }>(`/api/live-rank-sessions/${sessionId}/action`, {
     method: "POST",
     body: JSON.stringify(payload)
   });
