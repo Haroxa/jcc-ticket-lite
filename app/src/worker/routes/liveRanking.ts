@@ -6,6 +6,7 @@ import { readJson } from "../utils/http";
 import { fail, forbidden, ok, unauthorized } from "../utils/response";
 
 type LiveRankStatus = "live" | "countdown" | "frozen" | "pending_settlement" | "settled" | "cancelled";
+type EntryRankStatus = "normal" | "pending" | "away";
 
 type SessionRow = {
   id: string;
@@ -35,6 +36,7 @@ type EntryRow = {
   gift_diamonds: number;
   ticket_used: number;
   ticket_deposit: number;
+  rank_status: EntryRankStatus;
   note: string | null;
   created_at: string;
   updated_at: string;
@@ -51,6 +53,7 @@ type UpsertEntryPayload = {
   giftDiamonds?: number;
   ticketUsed?: number;
   ticketDeposit?: number;
+  rankStatus?: EntryRankStatus;
   note?: string;
 };
 
@@ -100,6 +103,7 @@ function mapEntry(row: EntryRow) {
     giftDiamonds: row.gift_diamonds,
     ticketUsed: row.ticket_used,
     ticketDeposit: row.ticket_deposit,
+    rankStatus: row.rank_status,
     score,
     projectedBalance: row.current_balance - row.ticket_used + row.ticket_deposit,
     note: row.note || "",
@@ -138,6 +142,7 @@ async function listSessionEntries(env: Env, sessionId: string) {
     JOIN ticket_people ON ticket_people.id = live_rank_entries.person_id
     WHERE live_rank_entries.session_id = ?
     ORDER BY
+      CASE live_rank_entries.rank_status WHEN 'normal' THEN 1 WHEN 'pending' THEN 2 ELSE 3 END,
       (live_rank_entries.gift_diamonds + live_rank_entries.ticket_used - live_rank_entries.ticket_deposit) DESC,
       live_rank_entries.updated_at ASC,
       ticket_people.name ASC
@@ -262,6 +267,7 @@ export async function handleLiveRankEntry(request: Request, env: Env) {
   const giftDiamonds = Number(payload.giftDiamonds ?? 0);
   const ticketUsed = Number(payload.ticketUsed ?? 0);
   const ticketDeposit = Number(payload.ticketDeposit ?? 0);
+  const rankStatus = payload.rankStatus === "pending" || payload.rankStatus === "away" ? payload.rankStatus : "normal";
   if (![giftDiamonds, ticketUsed, ticketDeposit].every(Number.isInteger)) return fail("礼物钻、取票和存票必须是整数");
   if (giftDiamonds < 0 || ticketUsed < 0 || ticketDeposit < 0) return fail("礼物钻、取票和存票不能小于 0");
   if (person.cached_balance - ticketUsed + ticketDeposit < 0) return fail(`结算后余额会小于 0，当前余额 ${person.cached_balance}`);
@@ -273,16 +279,16 @@ export async function handleLiveRankEntry(request: Request, env: Env) {
   if (existing) {
     await env.DB.prepare(`
       UPDATE live_rank_entries
-      SET gift_diamonds = ?, ticket_used = ?, ticket_deposit = ?, note = ?, updated_at = ?
+      SET gift_diamonds = ?, ticket_used = ?, ticket_deposit = ?, rank_status = ?, note = ?, updated_at = ?
       WHERE id = ?
-    `).bind(giftDiamonds, ticketUsed, ticketDeposit, payload.note?.trim() || null, now, existing.id).run();
+    `).bind(giftDiamonds, ticketUsed, ticketDeposit, rankStatus, payload.note?.trim() || null, now, existing.id).run();
   } else {
     await env.DB.prepare(`
       INSERT INTO live_rank_entries (
-        id, session_id, person_id, gift_diamonds, ticket_used, ticket_deposit, note, created_at, updated_at
+        id, session_id, person_id, gift_diamonds, ticket_used, ticket_deposit, rank_status, note, created_at, updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(randomId("rankent"), session.id, person.id, giftDiamonds, ticketUsed, ticketDeposit, payload.note?.trim() || null, now, now).run();
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(randomId("rankent"), session.id, person.id, giftDiamonds, ticketUsed, ticketDeposit, rankStatus, payload.note?.trim() || null, now, now).run();
   }
 
   const score = giftDiamonds + ticketUsed - ticketDeposit;
@@ -294,7 +300,7 @@ export async function handleLiveRankEntry(request: Request, env: Env) {
     session.id,
     `${session.title}：${person.name} 本场总票 ${score}`,
     undefined,
-    { personId: person.id, personName: person.name, giftDiamonds, ticketUsed, ticketDeposit, score, projectedBalance: person.cached_balance - ticketUsed + ticketDeposit }
+    { personId: person.id, personName: person.name, giftDiamonds, ticketUsed, ticketDeposit, rankStatus, score, projectedBalance: person.cached_balance - ticketUsed + ticketDeposit }
   );
   return ok({ updated: true });
 }

@@ -62,6 +62,7 @@ export type TicketRecord = {
 };
 
 export type LiveRankStatus = "live" | "countdown" | "frozen" | "pending_settlement" | "settled" | "cancelled";
+export type LiveRankEntryStatus = "normal" | "pending" | "away";
 
 export type LiveRankSession = {
   id: string;
@@ -89,6 +90,7 @@ export type LiveRankEntry = {
   giftDiamonds: number;
   ticketUsed: number;
   ticketDeposit: number;
+  rankStatus: LiveRankEntryStatus;
   score: number;
   projectedBalance: number;
   note: string;
@@ -233,6 +235,7 @@ export function upsertLiveRankEntry(payload: {
   giftDiamonds: number;
   ticketUsed: number;
   ticketDeposit: number;
+  rankStatus: LiveRankEntryStatus;
   note?: string;
 }) {
   return requestJson<{ updated: boolean }>("/api/live-rank-entries", {

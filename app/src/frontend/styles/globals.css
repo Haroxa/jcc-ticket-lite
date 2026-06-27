@@ -309,6 +309,25 @@ textarea { resize: vertical; }
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
+.quick-adjust-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 78px 78px;
+  gap: 8px;
+  align-items: center;
+}
+.quick-adjust-row span {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.quick-adjust-row button {
+  min-height: 36px;
+  padding: 0 10px;
+}
+.segmented.compact .segment {
+  min-height: 36px;
+  padding: 0 10px;
+}
 .live-rank-board {
   display: grid;
   gap: 10px;
@@ -969,6 +988,35 @@ input, select, textarea {
 }
 .live-rank-table.compact .table-row > * {
   min-width: 0;
+}
+.live-rank-table.compact .table-row:not(.header) {
+  cursor: pointer;
+}
+.live-rank-table.compact .table-row:not(.header):hover {
+  border-color: rgba(18, 128, 116, 0.28);
+  background: #f6fbfa;
+}
+.live-rank-table.compact .table-row.selected {
+  border-color: rgba(18, 128, 116, 0.45);
+  background: #edf8f6;
+}
+.live-rank-table.compact .table-row.pending {
+  background: #fffdf7;
+}
+.live-rank-table.compact .section-row {
+  min-height: 34px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  color: var(--muted);
+  background: var(--surface-soft);
+  cursor: default;
+}
+.live-rank-table.compact .section-row:hover {
+  border-color: var(--line);
+  background: var(--surface-soft);
+}
+.live-rank-table.compact .section-row span:first-child {
+  font-weight: 800;
+  color: var(--text);
 }
 .live-rank-table.compact {
   max-height: calc(36px + 7 * 56px);

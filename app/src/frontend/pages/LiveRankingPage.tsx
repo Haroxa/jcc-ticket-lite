@@ -9,6 +9,7 @@ import {
   type Account,
   type LiveRankEntry,
   type LiveRankSession,
+  type LiveRankEntryStatus,
   type Person
 } from "../api";
 import { EmptyState } from "../components/EmptyState/EmptyState";
@@ -23,6 +24,20 @@ const statusLabel: Record<LiveRankSession["status"], string> = {
   pending_settlement: "待结算",
   settled: "已结算",
   cancelled: "已取消"
+};
+
+const rankStatusLabel: Record<LiveRankEntryStatus, string> = {
+  normal: "正常排行",
+  pending: "待定",
+  away: "有事不来"
+};
+
+type ActiveNumberField = "giftDiamonds" | "ticketUsed" | "ticketDeposit";
+
+const activeFieldLabel: Record<ActiveNumberField, string> = {
+  giftDiamonds: "礼物钻",
+  ticketUsed: "取票",
+  ticketDeposit: "存票"
 };
 
 type LiveRankingPageProps = {
@@ -62,15 +77,19 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
   const [giftDiamonds, setGiftDiamonds] = useState("");
   const [ticketUsed, setTicketUsed] = useState("");
   const [ticketDeposit, setTicketDeposit] = useState("");
+  const [rankStatus, setRankStatus] = useState<LiveRankEntryStatus>("normal");
   const [note, setNote] = useState("");
   const [title, setTitle] = useState(currentTitle());
   const [sessionNote, setSessionNote] = useState("");
   const [countdownSeconds, setCountdownSeconds] = useState(180);
   const [notice, setNotice] = useState("");
   const [tick, setTick] = useState(0);
+  const [activeNumberField, setActiveNumberField] = useState<ActiveNumberField>("giftDiamonds");
 
   const selectedPerson = people.find((person) => person.id === personId);
   const sortedEntries = useMemo(() => [...entries].sort((a, b) => b.score - a.score || a.updatedAt.localeCompare(b.updatedAt) || a.personName.localeCompare(b.personName)), [entries]);
+  const normalEntries = useMemo(() => sortedEntries.filter((entry) => entry.rankStatus === "normal"), [sortedEntries]);
+  const pendingEntries = useMemo(() => sortedEntries.filter((entry) => entry.rankStatus !== "normal"), [sortedEntries]);
   const entryTotal = sortedEntries.reduce((sum, entry) => sum + entry.score, 0);
   const remaining = remainingSeconds(session);
   const canEditSession = !!session && session.status !== "settled" && session.status !== "cancelled" && canWrite(account);
@@ -140,7 +159,29 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
     setGiftDiamonds(existing ? String(existing.giftDiamonds) : "");
     setTicketUsed(existing ? String(existing.ticketUsed) : "");
     setTicketDeposit(existing ? String(existing.ticketDeposit) : "");
+    setRankStatus(existing?.rankStatus || "normal");
     setNote(existing?.note || "");
+  }
+
+  function selectEntry(entry: LiveRankEntry) {
+    const person = people.find((item) => item.id === entry.personId);
+    setPersonId(entry.personId);
+    setPersonKeyword(entry.personName);
+    if (person) {
+      setPeople((items) => items.some((item) => item.id === person.id) ? items : [person, ...items]);
+    }
+    setGiftDiamonds(String(entry.giftDiamonds));
+    setTicketUsed(String(entry.ticketUsed));
+    setTicketDeposit(String(entry.ticketDeposit));
+    setRankStatus(entry.rankStatus);
+    setNote(entry.note);
+  }
+
+  function adjustActiveField(delta: number) {
+    const update = (value: string) => String(Math.max(0, positiveInt(value) + delta));
+    if (activeNumberField === "giftDiamonds") setGiftDiamonds(update);
+    if (activeNumberField === "ticketUsed") setTicketUsed(update);
+    if (activeNumberField === "ticketDeposit") setTicketDeposit(update);
   }
 
   async function saveEntry() {
@@ -162,6 +203,7 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
       giftDiamonds: positiveInt(giftDiamonds),
       ticketUsed: positiveInt(ticketUsed),
       ticketDeposit: positiveInt(ticketDeposit),
+      rankStatus,
       note: note.trim()
     });
     if (!result.ok) {
@@ -217,15 +259,29 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
           </div>
           <div className="live-rank-board-meta">
             <span>{session ? statusLabel[session.status] : "未开始"}</span>
-            <span>上榜 {entries.length} 人</span>
+            <span>上榜 {normalEntries.length} 人</span>
+            {!!pendingEntries.length && <span>待定 {pendingEntries.length} 人</span>}
             <span>总票 {entryTotal}</span>
             {session?.frozenAt && <span>冻结 {formatDateTime(session.frozenAt)}</span>}
           </div>
           <div className="responsive-table live-rank-table compact">
             <div className="table-row header"><span>排名</span><span>存票人</span><span>本场总票</span><span>礼物钻</span><span>取票</span><span>存票</span><span>结算后</span><span>备注</span></div>
-            {sortedEntries.map((entry, index) => (
-              <div className="table-row" key={entry.id}>
+            {normalEntries.map((entry, index) => (
+              <div className={`table-row ${entry.personId === personId ? "selected" : ""}`} key={entry.id} onClick={() => selectEntry(entry)}>
                 <span className="row-no" data-label="排名">{index + 1}</span>
+                <strong data-label="存票人">{entry.personName}</strong>
+                <span data-label="本场总票">{entry.score}</span>
+                <span data-label="礼物钻">{entry.giftDiamonds}</span>
+                <span data-label="取票">{entry.ticketUsed}</span>
+                <span data-label="存票">{entry.ticketDeposit}</span>
+                <span data-label="结算后">{entry.projectedBalance}</span>
+                <span data-label="备注">{entry.note || "无备注"}</span>
+              </div>
+            ))}
+            {!!pendingEntries.length && <div className="table-row section-row"><span>待定区</span><span>不参与正常排名</span></div>}
+            {pendingEntries.map((entry) => (
+              <div className={`table-row pending ${entry.personId === personId ? "selected" : ""}`} key={entry.id} onClick={() => selectEntry(entry)}>
+                <span className="row-no" data-label="状态">{rankStatusLabel[entry.rankStatus]}</span>
                 <strong data-label="存票人">{entry.personName}</strong>
                 <span data-label="本场总票">{entry.score}</span>
                 <span data-label="礼物钻">{entry.giftDiamonds}</span>
@@ -259,9 +315,22 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
               onSelect={selectPerson}
             />
             <div className="live-rank-form-grid">
-              <label>礼物钻<input value={giftDiamonds} onChange={(event) => setGiftDiamonds(event.target.value)} inputMode="numeric" placeholder="0" /></label>
-              <label>取票<input value={ticketUsed} onChange={(event) => setTicketUsed(event.target.value)} inputMode="numeric" placeholder="0" /></label>
-              <label>存票<input value={ticketDeposit} onChange={(event) => setTicketDeposit(event.target.value)} inputMode="numeric" placeholder="0" /></label>
+              <label>礼物钻<input value={giftDiamonds} onFocus={() => setActiveNumberField("giftDiamonds")} onChange={(event) => setGiftDiamonds(event.target.value)} inputMode="numeric" placeholder="0" /></label>
+              <label>取票<input value={ticketUsed} onFocus={() => setActiveNumberField("ticketUsed")} onChange={(event) => setTicketUsed(event.target.value)} inputMode="numeric" placeholder="0" /></label>
+              <label>存票<input value={ticketDeposit} onFocus={() => setActiveNumberField("ticketDeposit")} onChange={(event) => setTicketDeposit(event.target.value)} inputMode="numeric" placeholder="0" /></label>
+            </div>
+            <div className="quick-adjust-row">
+              <span>当前调整：{activeFieldLabel[activeNumberField]}</span>
+              <button className="secondary-button" type="button" onClick={() => adjustActiveField(-100)}>-100</button>
+              <button className="secondary-button" type="button" onClick={() => adjustActiveField(100)}>+100</button>
+            </div>
+            <div>
+              <span className="field-label">状态</span>
+              <div className="segmented compact">
+                <button className={`segment ${rankStatus === "normal" ? "active" : ""}`} type="button" onClick={() => setRankStatus("normal")}>正常</button>
+                <button className={`segment ${rankStatus === "pending" ? "active" : ""}`} type="button" onClick={() => setRankStatus("pending")}>待定</button>
+                <button className={`segment ${rankStatus === "away" ? "active" : ""}`} type="button" onClick={() => setRankStatus("away")}>有事</button>
+              </div>
             </div>
             <div className={`balance-preview ${previewBalance < 0 ? "danger" : selectedPerson ? "ok" : ""}`}>
               {selectedPerson ? `本场总票 ${previewScore}，当前余额 ${selectedPerson.balance}，结算后 ${previewBalance}。` : "请选择存票人。"}
