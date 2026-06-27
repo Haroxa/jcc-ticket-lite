@@ -12,7 +12,6 @@ import {
   type LiveRankEntryStatus,
   type Person
 } from "../api";
-import { EmptyState } from "../components/EmptyState/EmptyState";
 import { PersonSearchSelect } from "../components/PersonSearchSelect/PersonSearchSelect";
 import { formatDateTime } from "../utils/time";
 import { canWrite } from "../utils/permissions";
@@ -60,6 +59,13 @@ function remainingSeconds(session: LiveRankSession | null) {
   return Math.max(0, Math.floor((new Date(session.countdownEndsAt).getTime() - Date.now()) / 1000));
 }
 
+function countdownDisplaySeconds(session: LiveRankSession | null, fallbackSeconds: number) {
+  if (!session) return fallbackSeconds;
+  if (session.status === "countdown") return remainingSeconds(session);
+  if (session.status === "live") return session.countdownSeconds || fallbackSeconds;
+  return 0;
+}
+
 function formatRemaining(seconds: number) {
   const minute = Math.floor(seconds / 60);
   const second = seconds % 60;
@@ -91,7 +97,7 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
   const normalEntries = useMemo(() => sortedEntries.filter((entry) => entry.rankStatus === "normal"), [sortedEntries]);
   const pendingEntries = useMemo(() => sortedEntries.filter((entry) => entry.rankStatus !== "normal"), [sortedEntries]);
   const entryTotal = sortedEntries.reduce((sum, entry) => sum + entry.score, 0);
-  const remaining = remainingSeconds(session);
+  const countdownDisplay = countdownDisplaySeconds(session, countdownSeconds);
   const canEditSession = !!session && session.status !== "settled" && session.status !== "cancelled" && canWrite(account);
   const canControlCountdown = canEditSession && (session.status === "live" || session.status === "countdown");
   const previewScore = positiveInt(giftDiamonds) + positiveInt(ticketUsed) - positiveInt(ticketDeposit);
@@ -268,7 +274,7 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
           <div className="live-rank-countdown-bar">
             <div className={`countdown-card ${session?.status === "countdown" ? "active" : ""}`}>
               <span>{session?.status === "countdown" ? "定榜倒计时" : "倒计时"}</span>
-              <strong>{formatRemaining(remaining)}</strong>
+              <strong>{formatRemaining(countdownDisplay)}</strong>
             </div>
             <label>秒数<input value={countdownSeconds} onChange={(event) => setCountdownSeconds(Math.max(10, Number(event.target.value || 180)))} inputMode="numeric" /></label>
             <div className="live-rank-control-grid inline">
@@ -285,34 +291,28 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
             <span>总票 {entryTotal}</span>
             {session?.frozenAt && <span>冻结 {formatDateTime(session.frozenAt)}</span>}
           </div>
-          <div className="responsive-table live-rank-table compact">
-            <div className="table-row header"><span>排名</span><span>存票人</span><span>本场总票</span><span>礼物钻</span><span>取票</span><span>存票</span><span>结算后</span><span>备注</span></div>
+          <div className="live-rank-board-list">
+            <div className="live-rank-board-head"><span>排名 / 存票人 / 总票</span><span>明细</span><span>余额</span><span>备注</span></div>
             {normalEntries.map((entry, index) => (
-              <div className={`table-row ${entry.personId === personId ? "selected" : ""}`} key={entry.id} onClick={() => selectEntry(entry)}>
-                <span className="row-no" data-label="排名">{index + 1}</span>
-                <strong data-label="存票人">{entry.personName}</strong>
-                <span data-label="本场总票">{entry.score}</span>
-                <span data-label="礼物钻">{entry.giftDiamonds}</span>
-                <span data-label="取票">{entry.ticketUsed}</span>
-                <span data-label="存票">{entry.ticketDeposit}</span>
-                <span data-label="结算后">{entry.projectedBalance}</span>
-                <span data-label="备注">{entry.note || "无备注"}</span>
-              </div>
+              <button className={`live-rank-board-row ${entry.personId === personId ? "selected" : ""}`} key={entry.id} onClick={() => selectEntry(entry)} type="button">
+                <strong><span className="rank-number">{index + 1}</span><span>{entry.personName} {entry.score}</span></strong>
+                <span>礼物 {entry.giftDiamonds} · 取票 {entry.ticketUsed} · 存票 -{entry.ticketDeposit}</span>
+                <span>{entry.projectedBalance}</span>
+                <span>{entry.note || "无备注"}</span>
+              </button>
             ))}
-            {!!pendingEntries.length && <div className="table-row section-row"><span>待定区</span><span>不参与正常排名</span></div>}
+            {!normalEntries.length && <div className="live-rank-board-empty">暂无正常排行记录，右侧保存后会显示在这里。</div>}
+          </div>
+          <div className="live-rank-pending-list">
+            <div className="live-rank-pending-title"><strong>待定区</strong><span>{pendingEntries.length}</span></div>
             {pendingEntries.map((entry) => (
-              <div className={`table-row pending ${entry.personId === personId ? "selected" : ""}`} key={entry.id} onClick={() => selectEntry(entry)}>
-                <span className="row-no" data-label="状态">{rankStatusLabel[entry.rankStatus]}</span>
-                <strong data-label="存票人">{entry.personName}</strong>
-                <span data-label="本场总票">{entry.score}</span>
-                <span data-label="礼物钻">{entry.giftDiamonds}</span>
-                <span data-label="取票">{entry.ticketUsed}</span>
-                <span data-label="存票">{entry.ticketDeposit}</span>
-                <span data-label="结算后">{entry.projectedBalance}</span>
-                <span data-label="备注">{entry.note || "无备注"}</span>
-              </div>
+              <button className={`live-rank-pending-row ${entry.personId === personId ? "selected" : ""}`} key={entry.id} onClick={() => selectEntry(entry)} type="button">
+                <strong>{entry.personName}</strong>
+                <span>{rankStatusLabel[entry.rankStatus]} · 总票 {entry.score}</span>
+                <span>{entry.note || "无备注"}</span>
+              </button>
             ))}
-            {!sortedEntries.length && <EmptyState title="暂无排行记录" description="右侧选择存票人并保存后会进入排行；设为待定或有事会进入待定区，不参与正常排名。" />}
+            {!pendingEntries.length && <span className="muted">没有待定或有事不来的存票人。</span>}
           </div>
         </section>
 
@@ -337,14 +337,7 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
               <button className="secondary-button" type="button" onClick={() => adjustActiveField(-100)}>-100</button>
               <button className="secondary-button" type="button" onClick={() => adjustActiveField(100)}>+100</button>
             </div>
-            <div>
-              <span className="field-label">状态</span>
-              <div className="segmented compact">
-                <button className={`segment ${rankStatus === "normal" ? "active" : ""}`} type="button" onClick={() => setRankStatus("normal")}>正常</button>
-                <button className={`segment ${rankStatus === "pending" ? "active" : ""}`} type="button" onClick={() => setRankStatus("pending")}>待定</button>
-                <button className={`segment ${rankStatus === "away" ? "active" : ""}`} type="button" onClick={() => setRankStatus("away")}>有事</button>
-              </div>
-            </div>
+            <label>状态<select value={rankStatus} onChange={(event) => setRankStatus(event.target.value as LiveRankEntryStatus)}><option value="normal">正常排行</option><option value="pending">待定</option><option value="away">有事不来</option></select></label>
             <div className={`balance-preview ${previewBalance < 0 ? "danger" : selectedPerson ? "ok" : ""}`}>
               {selectedPerson ? `本场总票 ${previewScore}，当前余额 ${selectedPerson.balance}，结算后 ${previewBalance}。` : "请选择存票人。"}
             </div>
