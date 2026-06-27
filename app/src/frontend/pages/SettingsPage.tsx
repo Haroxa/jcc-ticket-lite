@@ -32,6 +32,12 @@ export function SettingsPage({ account, onNavigate }: SettingsPageProps) {
         <span>停用和拉黑不会进入快速录入候选。</span>
       </section>
       <section className="panel stacked">
+        <h3>初始化说明</h3>
+        <span>首次部署后需要先创建唯一管理员账号。</span>
+        <span>管理员创建后，日常登录不再默认填写任何账号。</span>
+        <span>操作员和只读成员由管理员在账号管理中维护。</span>
+      </section>
+      <section className="panel stacked">
         <h3>权限说明</h3>
         <span>管理员：账号、存票人、流水和日志管理</span>
         <span>操作员：录入和维护流水，可查看自己的操作日志</span>

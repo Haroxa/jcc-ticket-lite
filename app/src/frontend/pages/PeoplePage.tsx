@@ -18,9 +18,10 @@ type PeopleModal =
 
 type PeoplePageProps = {
   account: Account;
+  onOpenHistory: (person: Person) => void;
 };
 
-export function PeoplePage({ account }: PeoplePageProps) {
+export function PeoplePage({ account, onOpenHistory }: PeoplePageProps) {
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
@@ -118,10 +119,15 @@ export function PeoplePage({ account }: PeoplePageProps) {
             <span data-label="备注">{person.note || "无备注"}</span>
             {canAdmin(account) ? (
               <div className="row-actions" data-label="操作">
+                <button className="secondary-button row-action" type="button" onClick={() => onOpenHistory(person)}>历史</button>
                 <button className="secondary-button row-action" type="button" onClick={() => setModal({ type: "edit", person })}>编辑</button>
                 <button className="secondary-button row-action" type="button" onClick={() => setModal({ type: "status", person })}>改状态</button>
               </div>
-            ) : <span className="muted" data-label="操作">只读</span>}
+            ) : (
+              <div className="row-actions" data-label="操作">
+                <button className="secondary-button row-action" type="button" onClick={() => onOpenHistory(person)}>历史</button>
+              </div>
+            )}
           </div>
         ))}
         {!data.items.length && <EmptyState title="暂无存票人" description="当前筛选条件下没有存票人，可重置筛选或新增存票人。" />}

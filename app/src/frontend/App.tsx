@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getMe, logout, type Account } from "./api";
+import { getMe, logout, type Account, type Person } from "./api";
 import { AppLayout } from "./components/AppLayout/AppLayout";
 import { AccountsPage } from "./pages/AccountsPage";
 import { AuditLogsPage } from "./pages/AuditLogsPage";
@@ -41,6 +41,7 @@ export default function App() {
   const [account, setAccount] = useState<Account | null>(null);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [page, setPage] = useState<PageKey>("dashboard");
+  const [historyPerson, setHistoryPerson] = useState<Person | null>(null);
 
   const pageTitle = useMemo(() => pageMap[page], [page]);
 
@@ -91,9 +92,9 @@ export default function App() {
     >
       {page === "dashboard" && <DashboardPage onNavigate={navigate} />}
       {page === "entry" && <EntryPage account={account} />}
-      {page === "people" && <PeoplePage account={account} />}
+      {page === "people" && <PeoplePage account={account} onOpenHistory={(person) => { setHistoryPerson(person); navigate("history"); }} />}
       {page === "records" && <RecordsPage account={account} />}
-      {page === "history" && <HistoryPage />}
+      {page === "history" && <HistoryPage initialPerson={historyPerson} />}
       {page === "accounts" && <AccountsPage account={account} />}
       {page === "auditLogs" && <AuditLogsPage account={account} />}
       {page === "settings" && <SettingsPage account={account} onNavigate={navigate} />}

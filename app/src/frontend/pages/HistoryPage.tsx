@@ -10,7 +10,11 @@ function localDate(value = new Date()) {
   return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
 }
 
-export function HistoryPage() {
+type HistoryPageProps = {
+  initialPerson: Person | null;
+};
+
+export function HistoryPage({ initialPerson }: HistoryPageProps) {
   const [people, setPeople] = useState<Person[]>([]);
   const [personId, setPersonId] = useState("");
   const [personKeyword, setPersonKeyword] = useState("");
@@ -52,6 +56,15 @@ export function HistoryPage() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (!initialPerson) return;
+    setPeople((items) => items.some((person) => person.id === initialPerson.id) ? items : [initialPerson, ...items]);
+    setPersonId(initialPerson.id);
+    setPersonKeyword(initialPerson.name);
+    setPage(1);
+    void loadHistory(initialPerson.id, 1);
+  }, [initialPerson?.id]);
 
   async function resetFilters() {
     setPersonId("");

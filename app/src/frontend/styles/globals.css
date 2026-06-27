@@ -794,7 +794,7 @@ input, select, textarea {
   grid-template-columns: 52px minmax(150px, 1.2fr) minmax(110px, 1fr) minmax(70px, 0.7fr) minmax(70px, 0.7fr) minmax(70px, 0.7fr) minmax(76px, auto);
 }
 .people-table .table-row {
-  grid-template-columns: 48px minmax(120px, 1fr) 82px 82px minmax(140px, 1.15fr) 148px;
+  grid-template-columns: 48px minmax(120px, 1fr) 82px 82px minmax(140px, 1.15fr) 206px;
   gap: 10px;
 }
 .audit-table .table-row {
@@ -857,7 +857,7 @@ input, select, textarea {
 }
 .people-table .row-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   width: 100%;
   min-width: 0;
@@ -966,6 +966,22 @@ input, select, textarea {
 .modal-actions .primary-button,
 .modal-actions .secondary-button {
   min-width: 96px;
+}
+.confirm-grid {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 8px 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfc;
+}
+.confirm-grid span {
+  color: var(--muted);
+}
+.confirm-grid strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .bottom-nav { display: none; }
 .public-shell {
@@ -1117,7 +1133,7 @@ input, select, textarea {
   }
   .people-table .table-row {
     min-width: 0;
-    grid-template-columns: 44px minmax(96px, 1fr) 68px 74px minmax(96px, 1.05fr) 144px;
+    grid-template-columns: 44px minmax(88px, 1fr) 64px 72px minmax(88px, 1.05fr) 184px;
     gap: 8px;
   }
   .responsive-table.people-table {
@@ -1345,7 +1361,7 @@ input, select, textarea {
     grid-column: 1 / -1;
     grid-row: auto;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
     justify-content: stretch;
     width: 100%;

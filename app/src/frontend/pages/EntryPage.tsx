@@ -16,6 +16,15 @@ type CalcStep = {
   direction: 1 | -1;
 };
 
+type PendingRecord = {
+  person: Person;
+  recordedAt: string;
+  type: "deposit" | "withdraw";
+  amount: number;
+  note: string;
+  nextBalance: number;
+};
+
 const prices = [99, 199, 299, 366, 520, 999, 1314, 3000];
 
 type EntryPageProps = {
@@ -36,6 +45,8 @@ export function EntryPage({ account }: EntryPageProps) {
   const [customPrice, setCustomPrice] = useState("");
   const [calcSteps, setCalcSteps] = useState<CalcStep[]>([]);
   const [recentRecords, setRecentRecords] = useState<TicketRecord[]>([]);
+  const [pendingRecord, setPendingRecord] = useState<PendingRecord | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     listPeople({ status: "normal", pageSize: 50 }).then((result) => {
@@ -85,7 +96,7 @@ export function EntryPage({ account }: EntryPageProps) {
     setAmount(String(Math.max(0, value)));
   }
 
-  async function handleSave() {
+  function handleSave() {
     if (!canWrite(account)) {
       setNotice("当前角色不能录入。");
       return;
@@ -102,23 +113,43 @@ export function EntryPage({ account }: EntryPageProps) {
       setNotice(`当前余额 ${selectedPerson.balance}，不能取用 ${amount}。`);
       return;
     }
-    const result = await createRecord({
-      personId,
+    if (!selectedPerson) {
+      setNotice("请选择有效的存票人。");
+      return;
+    }
+    setPendingRecord({
+      person: selectedPerson,
       recordedAt,
       type,
       amount: Number(amount),
-      note
+      note: note.trim(),
+      nextBalance
     });
+  }
+
+  async function confirmSave() {
+    if (!pendingRecord || isSaving) return;
+    setIsSaving(true);
+    const result = await createRecord({
+      personId: pendingRecord.person.id,
+      recordedAt: pendingRecord.recordedAt,
+      type: pendingRecord.type,
+      amount: pendingRecord.amount,
+      note: pendingRecord.note
+    });
+    setIsSaving(false);
     if (!result.ok) {
+      setPendingRecord(null);
       setNotice(result.message);
       return;
     }
+    setPendingRecord(null);
     setAmount("");
     setNote("");
     setNotice(`记录已保存，当前余额 ${result.data.balance}。`);
     const refreshed = await listPeople({ status: "normal", pageSize: 50 });
     if (refreshed.ok) setPeople(refreshed.data.items);
-    await loadRecentRecords(personId);
+    await loadRecentRecords(pendingRecord.person.id);
   }
 
   return (
@@ -246,6 +277,42 @@ export function EntryPage({ account }: EntryPageProps) {
           </div>
         </section>
       )}
+      {pendingRecord && (
+        <EntryConfirmModal
+          record={pendingRecord}
+          isSaving={isSaving}
+          onCancel={() => setPendingRecord(null)}
+          onConfirm={confirmSave}
+        />
+      )}
+    </div>
+  );
+}
+
+function EntryConfirmModal({ record, isSaving, onCancel, onConfirm }: {
+  record: PendingRecord;
+  isSaving: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="entryConfirmTitle">
+        <h3 id="entryConfirmTitle">确认保存记录</h3>
+        <p className="muted">保存后会生成正式流水，并写入操作日志。</p>
+        <div className="confirm-grid">
+          <span>存票人</span><strong>{record.person.name}</strong>
+          <span>类型</span><strong>{record.type === "deposit" ? "存入" : "取用"}</strong>
+          <span>票数</span><strong>{record.type === "deposit" ? "+" : "-"}{record.amount}</strong>
+          <span>时间</span><strong>{formatLocalMinute(record.recordedAt)}</strong>
+          <span>保存后余额</span><strong>{record.nextBalance}</strong>
+          <span>备注</span><strong>{record.note || "无备注"}</strong>
+        </div>
+        <div className="button-row modal-actions">
+          <button className="secondary-button" disabled={isSaving} type="button" onClick={onCancel}>返回修改</button>
+          <button className="primary-button" disabled={isSaving} type="button" onClick={onConfirm}>{isSaving ? "保存中..." : "确认保存"}</button>
+        </div>
+      </section>
     </div>
   );
 }
