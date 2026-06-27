@@ -233,13 +233,27 @@ async function createRecord(request: Request, env: Env, account: SessionAccount)
     VALUES (?, ?, ?, ?, ?, ?, 'normal', ?, ?, ?, ?)
   `).bind(id, person.id, recordedAt, payload.type, amount, delta, payload.note?.trim() || null, account.id, now, now).run();
   const nextBalance = await recalcPersonBalance(env, person.id);
+  const afterData = {
+    id,
+    personId: person.id,
+    personName: person.name,
+    recordedAt,
+    type: payload.type,
+    amount,
+    balanceDelta: delta,
+    status: "normal",
+    note: payload.note?.trim() || "",
+    balanceAfter: nextBalance
+  };
   await writeAuditLog(
     env,
     account,
     "新增记录",
     "record",
     id,
-    `${person.name} ${payload.type === "deposit" ? "存入" : "取用"} ${amount}，余额 ${nextBalance}`
+    `${person.name} ${payload.type === "deposit" ? "存入" : "取用"} ${amount}，余额 ${nextBalance}`,
+    undefined,
+    afterData
   );
   return ok({ recordId: id, balance: nextBalance });
 }
@@ -270,7 +284,22 @@ export async function handleVoidRecord(request: Request, env: Env, recordId: str
     WHERE id = ?
   `).bind(reason, account.id, now, now, recordId).run();
   const nextBalance = await recalcPersonBalance(env, record.person_id);
-  await writeAuditLog(env, account, "作废记录", "record", recordId, `${record.person_name} 作废流水 ${record.amount}，原因：${reason}`);
+  const nextRecord = mapRecord({
+    ...record,
+    status: "voided",
+    void_reason: reason,
+    updated_at: now
+  });
+  await writeAuditLog(
+    env,
+    account,
+    "作废记录",
+    "record",
+    recordId,
+    `${record.person_name} 作废流水 ${record.amount}，原因：${reason}`,
+    mapRecord(record),
+    { ...nextRecord, balanceAfter: nextBalance }
+  );
   return ok({ balance: nextBalance });
 }
 
@@ -298,7 +327,22 @@ export async function handleRestoreRecord(request: Request, env: Env, recordId: 
     WHERE id = ?
   `).bind(now, recordId).run();
   const nextBalance = await recalcPersonBalance(env, record.person_id);
-  await writeAuditLog(env, account, "恢复记录", "record", recordId, `${record.person_name} 恢复流水 ${record.amount}`);
+  const nextRecord = mapRecord({
+    ...record,
+    status: "normal",
+    void_reason: null,
+    updated_at: now
+  });
+  await writeAuditLog(
+    env,
+    account,
+    "恢复记录",
+    "record",
+    recordId,
+    `${record.person_name} 恢复流水 ${record.amount}`,
+    mapRecord(record),
+    { ...nextRecord, balanceAfter: nextBalance }
+  );
   return ok({ balance: nextBalance });
 }
 

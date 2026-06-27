@@ -99,10 +99,18 @@ function formatData(value: unknown) {
     .join("\n");
 }
 
+function hasData(value: unknown) {
+  return !!value && typeof value === "object" && Object.keys(value as Record<string, unknown>).length > 0;
+}
+
 function AuditLogDetailModal({ log, onCancel }: {
   log: AuditLog;
   onCancel: () => void;
 }) {
+  const hasBefore = hasData(log.beforeData);
+  const hasAfter = hasData(log.afterData);
+  const changeTitle = hasBefore && hasAfter ? ["变更前", "变更后"] : ["变更前", "新增内容"];
+
   return (
     <div className="modal-backdrop" role="presentation">
       <section className="modal-card audit-detail-modal" role="dialog" aria-modal="true" aria-labelledby="auditDetailTitle">
@@ -114,16 +122,24 @@ function AuditLogDetailModal({ log, onCancel }: {
           <span>对象</span><strong>{targetTypeLabel(log.targetType)}{log.targetId ? ` · ${log.targetId}` : ""}</strong>
           <span>摘要</span><strong>{log.summary}</strong>
         </div>
-        <div className="audit-change-grid">
-          <div>
-            <h4>变更前</h4>
-            <pre>{formatData(log.beforeData)}</pre>
+        {hasBefore || hasAfter ? (
+          <div className={`audit-change-grid ${hasBefore && hasAfter ? "" : "single"}`}>
+            {hasBefore && (
+              <div>
+                <h4>{changeTitle[0]}</h4>
+                <pre>{formatData(log.beforeData)}</pre>
+              </div>
+            )}
+            {hasAfter && (
+              <div>
+                <h4>{changeTitle[1]}</h4>
+                <pre>{formatData(log.afterData)}</pre>
+              </div>
+            )}
           </div>
-          <div>
-            <h4>变更后</h4>
-            <pre>{formatData(log.afterData)}</pre>
-          </div>
-        </div>
+        ) : (
+          <p className="empty-inline">该操作没有结构化变更数据，请以摘要为准。</p>
+        )}
         <div className="button-row modal-actions">
           <button className="primary-button" type="button" onClick={onCancel}>关闭</button>
         </div>
