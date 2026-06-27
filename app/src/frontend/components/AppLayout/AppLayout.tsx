@@ -14,7 +14,7 @@ type NavItem = {
 const primaryNav: NavItem[] = [
   { key: "dashboard", label: "工作台", icon: "⌂" },
   { key: "entry", label: "快速录入", shortLabel: "录入", icon: "＋", require: "write" },
-  { key: "liveRanking", label: "场次排行", shortLabel: "排行", icon: "▦", require: "write" },
+  { key: "liveRanking", label: "结算窗口", shortLabel: "窗口", icon: "▦", require: "write" },
   { key: "people", label: "存票人", icon: "◎" },
   { key: "records", label: "存取记录", shortLabel: "记录", icon: "≡" },
   { key: "history", label: "个人历史", shortLabel: "历史", icon: "◷" }

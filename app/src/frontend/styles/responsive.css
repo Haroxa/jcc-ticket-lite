@@ -137,6 +137,9 @@
   .live-rank-command-actions .live-rank-control-grid {
     grid-template-columns: 1fr;
   }
+  .window-picker-menu {
+    max-height: 236px;
+  }
   .live-rank-board-list {
     height: 304px;
     max-height: 304px;
@@ -157,6 +160,22 @@
   .live-rank-control-grid,
   .live-rank-control-grid.inline {
     grid-template-columns: 1fr;
+  }
+  .live-rank-history-row {
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 4px 10px;
+    align-items: start;
+  }
+  .live-rank-history-row strong {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .live-rank-history-row span:not(.history-index) {
+    grid-column: 2;
+  }
+  .live-rank-history-row .history-index {
+    grid-column: 1;
+    grid-row: 1 / span 4;
   }
   .filter-panel { grid-template-columns: 1fr; }
   .account-toolbar {

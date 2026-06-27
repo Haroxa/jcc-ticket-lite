@@ -30,7 +30,7 @@ export type PageKey =
 const pageMap: Record<PageKey, string> = {
   dashboard: "工作台",
   entry: "快速录入",
-  liveRanking: "场次排行",
+  liveRanking: "结算窗口",
   people: "存票人",
   records: "存取记录",
   history: "个人历史",

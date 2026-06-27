@@ -93,11 +93,13 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
   const [activeNumberField, setActiveNumberField] = useState<ActiveNumberField>("giftDiamonds");
   const [showSettlementReview, setShowSettlementReview] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [sessionPickerOpen, setSessionPickerOpen] = useState(false);
 
   const selectedPerson = people.find((person) => person.id === personId);
   const sortedEntries = useMemo(() => [...entries].sort((a, b) => b.score - a.score || a.updatedAt.localeCompare(b.updatedAt) || a.personName.localeCompare(b.personName)), [entries]);
   const normalEntries = useMemo(() => sortedEntries.filter((entry) => entry.rankStatus === "normal"), [sortedEntries]);
   const pendingEntries = useMemo(() => sortedEntries.filter((entry) => entry.rankStatus !== "normal"), [sortedEntries]);
+  const recentSessions = useMemo(() => sessions.slice(0, 10), [sessions]);
   const settlementReviewRows = useMemo(() => {
     const rows: SettlementReviewRow[] = [];
     sortedEntries.forEach((entry) => {
@@ -186,7 +188,7 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
 
   async function createSession() {
     if (!title.trim()) {
-      setNotice("请输入场次名称。");
+      setNotice("请输入窗口名称。");
       return;
     }
     const result = await createLiveRankSession({ title: title.trim(), note: sessionNote.trim() });
@@ -233,7 +235,7 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
 
   async function saveEntry() {
     if (!session) {
-      setNotice("请先创建或选择场次。");
+      setNotice("请先创建或选择窗口。");
       return;
     }
     if (!personId) {
@@ -257,7 +259,7 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
       setNotice(result.message);
       return;
     }
-    setNotice("本场排行已保存，结算前不会影响长期余额。");
+    setNotice("窗口记录已保存，结算前不会影响长期余额。");
     await loadSession(session.id);
   }
 
@@ -328,7 +330,33 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
         <div className="live-rank-command-main">
           <div className="panel-header compact"><h3>当前窗口</h3><span>选择历史窗口或新建窗口</span></div>
           <div className="live-rank-setup-row">
-            <label>窗口<select value={activeSessionId} onChange={(event) => { setActiveSessionId(event.target.value); void loadSession(event.target.value); }}><option value="">选择历史窗口</option>{sessions.map((item) => <option key={item.id} value={item.id}>{item.title} · {statusLabel[item.status]}</option>)}</select></label>
+            <div className="window-picker">
+              <span className="field-label">窗口</span>
+              <button className="window-picker-button" type="button" onClick={() => setSessionPickerOpen((value) => !value)}>
+                <span>{session?.title || "选择历史窗口"}</span>
+                <small>{session ? statusLabel[session.status] : "最近 10 个"}</small>
+              </button>
+              {sessionPickerOpen && (
+                <div className="window-picker-menu">
+                  {recentSessions.map((item) => (
+                    <button
+                      className={item.id === activeSessionId ? "active" : ""}
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveSessionId(item.id);
+                        setSessionPickerOpen(false);
+                        void loadSession(item.id);
+                      }}
+                    >
+                      <strong>{item.title}</strong>
+                      <span>{statusLabel[item.status]} · {formatDateTime(item.createdAt)}</span>
+                    </button>
+                  ))}
+                  {!recentSessions.length && <div className="window-picker-empty">暂无历史窗口</div>}
+                </div>
+              )}
+            </div>
             <button className="secondary-button" disabled={!canWrite(account)} type="button" onClick={createSession}>新建窗口</button>
           </div>
         </div>
@@ -346,7 +374,7 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
           <div className="live-rank-board-top">
             <div>
               <h3>实时排行</h3>
-              <p>按本场总票排序，截图展示时优先截取此区域。</p>
+              <p>按窗口总票排序，截图展示时优先截取此区域。</p>
             </div>
             <div className="live-rank-board-meta">
               <span>{session ? statusLabel[session.status] : "未开始"}</span>
@@ -417,7 +445,7 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
             </div>
             <label>状态<select value={rankStatus} onChange={(event) => setRankStatus(event.target.value as LiveRankEntryStatus)}><option value="normal">正常排行</option><option value="pending">待定</option><option value="away">有事不来</option></select></label>
             <div className={`balance-preview ${previewBalance < 0 ? "danger" : selectedPerson ? "ok" : ""}`}>
-              {selectedPerson ? `本场总票 ${previewScore}，当前余额 ${selectedPerson.balance}，结算后 ${previewBalance}。` : "请选择存票人。"}
+              {selectedPerson ? `窗口总票 ${previewScore}，当前余额 ${selectedPerson.balance}，结算后 ${previewBalance}。` : "请选择存票人。"}
             </div>
             <label>备注<textarea value={note} onChange={(event) => setNote(event.target.value)} rows={2} placeholder="可选" /></label>
             <button className="primary-button" disabled={!canEditSession} type="button" onClick={saveEntry}>保存到排行</button>
@@ -425,6 +453,33 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
           </section>
         </aside>
       </div>
+
+      <section className="panel live-rank-history">
+        <div className="panel-header compact">
+          <h3>窗口历史</h3>
+          <span>最近 10 个，更多旧窗口暂不展示</span>
+        </div>
+        <div className="live-rank-history-list">
+          {recentSessions.map((item, index) => (
+            <button
+              className={`live-rank-history-row ${item.id === activeSessionId ? "active" : ""}`}
+              key={item.id}
+              type="button"
+              onClick={() => {
+                setActiveSessionId(item.id);
+                void loadSession(item.id);
+              }}
+            >
+              <span className="history-index">#{index + 1}</span>
+              <strong>{item.title}</strong>
+              <span>{statusLabel[item.status]}</span>
+              <span>创建 {formatDateTime(item.createdAt)}</span>
+              <span>{item.settledAt ? `结算 ${formatDateTime(item.settledAt)}` : "未结算"}</span>
+            </button>
+          ))}
+          {!recentSessions.length && <div className="live-rank-history-empty">暂无窗口历史，新建窗口后会显示在这里。</div>}
+        </div>
+      </section>
       {showSettlementReview && (
         <div className="modal-backdrop" role="presentation">
           <section className="modal-card settlement-review-modal" role="dialog" aria-modal="true" aria-label="确认结算">
