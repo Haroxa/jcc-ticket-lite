@@ -379,9 +379,7 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
                       type="button"
                       onClick={() => selectSession(item.id)}
                     >
-                      <span>{item.title}</span>
-                      <small>{statusLabel[item.status]}</small>
-                      <time>{formatDateTime(item.createdAt)}</time>
+                      <span>{item.title} · {statusLabel[item.status]} · {formatDateTime(item.createdAt)}</span>
                     </button>
                   ))}
                   {!pickerSessions.length && <div className="window-picker-empty">暂无历史窗口</div>}

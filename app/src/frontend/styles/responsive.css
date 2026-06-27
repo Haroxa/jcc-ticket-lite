@@ -138,7 +138,8 @@
     grid-template-columns: 1fr;
   }
   .window-picker-menu {
-    max-height: 198px;
+    width: 100%;
+    max-height: 188px;
   }
   .live-rank-board-list {
     height: 304px;
@@ -160,10 +161,6 @@
   .live-rank-control-grid,
   .live-rank-control-grid.inline {
     grid-template-columns: 1fr;
-  }
-  .window-picker-menu button {
-    grid-template-columns: minmax(0, 1fr) 54px 106px;
-    gap: 6px;
   }
   .window-filter-panel {
     grid-template-columns: 1fr;
