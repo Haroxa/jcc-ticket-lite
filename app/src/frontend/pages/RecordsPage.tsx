@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { listRecords, restoreRecord, voidRecord, type Account, type TicketRecord } from "../api";
 import { EmptyState } from "../components/EmptyState/EmptyState";
 import { Pagination } from "../components/Pagination/Pagination";
+import { RecordDetailModal } from "../components/RecordDetailModal/RecordDetailModal";
 import { formatLocalMinute } from "../utils/time";
 import { canWrite } from "../utils/permissions";
 
@@ -11,6 +12,7 @@ type RecordsPageProps = {
 
 type RecordModal =
   | { type: "status"; record: TicketRecord }
+  | { type: "detail"; record: TicketRecord }
   | null;
 
 function localDate(value = new Date()) {
@@ -134,7 +136,7 @@ export function RecordsPage({ account }: RecordsPageProps) {
       <div className="responsive-table records-table">
         <div className="table-row header"><span>序号</span><span>时间</span><span>存票人</span><span>类型</span><span>票数</span><span>状态</span><span>操作</span></div>
         {data.items.map((record, index) => (
-          <div className={`table-row ${record.type} record-row-${record.status}`} key={record.id}>
+          <div className={`table-row clickable-row ${record.type} record-row-${record.status}`} key={record.id} role="button" tabIndex={0} onClick={() => setModal({ type: "detail", record })} onKeyDown={(event) => { if (event.key === "Enter") setModal({ type: "detail", record }); }}>
             <span className="row-no">{(page - 1) * pageSize + index + 1}</span>
             <strong>{formatLocalMinute(record.recordedAt)}</strong>
             <span>{record.personName}</span>
@@ -142,7 +144,7 @@ export function RecordsPage({ account }: RecordsPageProps) {
             <span>{record.type === "deposit" ? "+" : "-"}{record.amount}</span>
             <span>{record.status === "normal" ? "正常" : "作废"}</span>
             {canWrite(account) ? (
-              <button className="secondary-button row-action" type="button" onClick={() => setModal({ type: "status", record })}>{record.status === "normal" ? "作废" : "恢复"}</button>
+              <button className="secondary-button row-action" type="button" onClick={(event) => { event.stopPropagation(); setModal({ type: "status", record }); }}>{record.status === "normal" ? "作废" : "恢复"}</button>
             ) : <span className="muted">只读</span>}
           </div>
         ))}
@@ -156,6 +158,7 @@ export function RecordsPage({ account }: RecordsPageProps) {
         onPageChange={(nextPage) => loadRecords(nextPage)}
         onPageSizeChange={(nextPageSize) => { setPageSize(nextPageSize); void listRecords({ keyword, type, status, dateFrom, dateTo, page: 1, pageSize: nextPageSize }).then((result) => { if (result.ok) { setData({ items: result.data.items, total: result.data.total, totalPages: result.data.totalPages }); setPage(result.data.page); setNotice(""); } else setNotice(result.message); }); }}
       />
+      {modal?.type === "detail" && <RecordDetailModal record={modal.record} onClose={closeModal} />}
       {modal?.type === "status" && <RecordStatusModal record={modal.record} onCancel={closeModal} onSubmit={submitRecordStatus} />}
     </section>
   );

@@ -5,9 +5,10 @@ import { formatLocalMinute } from "../utils/time";
 
 type DashboardPageProps = {
   onNavigate: (page: PageKey) => void;
+  onOpenHistory: (record: TicketRecord) => void;
 };
 
-export function DashboardPage({ onNavigate }: DashboardPageProps) {
+export function DashboardPage({ onNavigate, onOpenHistory }: DashboardPageProps) {
   const [data, setData] = useState<{
     totalBalance: number;
     peopleCount: number;
@@ -52,10 +53,10 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
           <button className="primary-button" type="button" onClick={() => onNavigate("entry")}>新增记录</button>
           <div className="record-list">
             {data?.recent.map((record) => (
-              <article className={`record-card ${record.type} ${record.status === "voided" ? "voided" : ""}`} key={record.id}>
+              <button className={`record-card ${record.type} ${record.status === "voided" ? "voided" : ""}`} key={record.id} type="button" onClick={() => onOpenHistory(record)}>
                 <strong>{record.personName} {record.type === "deposit" ? "存入" : "取用"} {record.amount}</strong>
                 <span>{formatLocalMinute(record.recordedAt)} · {record.status === "normal" ? "正常" : "作废"}</span>
-              </article>
+              </button>
             ))}
           </div>
         </section>

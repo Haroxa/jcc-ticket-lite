@@ -3,6 +3,7 @@ import { listPeople, listRecords, type Person, type RecordSummary, type TicketRe
 import { EmptyState } from "../components/EmptyState/EmptyState";
 import { Pagination } from "../components/Pagination/Pagination";
 import { PersonSearchSelect } from "../components/PersonSearchSelect/PersonSearchSelect";
+import { RecordDetailModal } from "../components/RecordDetailModal/RecordDetailModal";
 import { formatLocalMinute } from "../utils/time";
 
 function localDate(value = new Date()) {
@@ -31,6 +32,7 @@ export function HistoryPage({ initialPerson }: HistoryPageProps) {
     summary: { depositTotal: 0, withdrawTotal: 0, netTotal: 0, normalCount: 0, voidedCount: 0, lastRecordedAt: "" }
   });
   const [notice, setNotice] = useState("");
+  const [detailRecord, setDetailRecord] = useState<TicketRecord | null>(null);
 
   async function loadHistory(nextPersonId = personId, nextPage = page, nextPageSize = pageSize) {
     if (!nextPersonId) {
@@ -159,7 +161,7 @@ export function HistoryPage({ initialPerson }: HistoryPageProps) {
       <div className="responsive-table records-table">
         <div className="table-row header"><span>序号</span><span>时间</span><span>存票人</span><span>类型</span><span>票数</span><span>状态</span><span>备注</span></div>
         {data.items.map((record, index) => (
-          <div className={`table-row ${record.type} record-row-${record.status}`} key={record.id}>
+          <button className={`table-row clickable-row ${record.type} record-row-${record.status}`} key={record.id} type="button" onClick={() => setDetailRecord(record)}>
             <span className="row-no">{(page - 1) * pageSize + index + 1}</span>
             <strong>{formatLocalMinute(record.recordedAt)}</strong>
             <span>{record.personName}</span>
@@ -167,7 +169,7 @@ export function HistoryPage({ initialPerson }: HistoryPageProps) {
             <span>{record.type === "deposit" ? "+" : "-"}{record.amount}</span>
             <span>{record.status === "normal" ? "正常" : "作废"}</span>
             <span>{record.note || record.voidReason || "无备注"}</span>
-          </div>
+          </button>
         ))}
         {!personId && <EmptyState title="请选择存票人" description="输入姓名或备注后，从下拉结果中点击选择，再查看个人历史。" />}
         {personId && !data.items.length && <EmptyState title="暂无历史记录" description="当前筛选条件下没有流水，可调整类型或状态后重新查询。" />}
@@ -180,6 +182,7 @@ export function HistoryPage({ initialPerson }: HistoryPageProps) {
         onPageChange={(nextPage) => loadHistory(personId, nextPage)}
         onPageSizeChange={(nextPageSize) => { setPageSize(nextPageSize); void loadHistory(personId, 1, nextPageSize); }}
       />
+      {detailRecord && <RecordDetailModal record={detailRecord} onClose={() => setDetailRecord(null)} />}
     </section>
   );
 }

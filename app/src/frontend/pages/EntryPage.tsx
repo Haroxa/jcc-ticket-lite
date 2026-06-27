@@ -29,9 +29,10 @@ const prices = [99, 199, 299, 366, 520, 999, 1314, 3000];
 
 type EntryPageProps = {
   account: Account;
+  onOpenHistory: (record: TicketRecord) => void;
 };
 
-export function EntryPage({ account }: EntryPageProps) {
+export function EntryPage({ account, onOpenHistory }: EntryPageProps) {
   const [people, setPeople] = useState<Person[]>([]);
   const [personId, setPersonId] = useState("");
   const [personKeyword, setPersonKeyword] = useState("");
@@ -200,13 +201,13 @@ export function EntryPage({ account }: EntryPageProps) {
           <div className="panel-header compact"><h3>最近操作</h3><span>最近 3 条</span></div>
           <div className="person-recent-list">
             {recentRecords.map((record) => (
-              <article className={`recent-record-card ${record.type} ${record.status === "voided" ? "voided" : ""}`} key={record.id}>
+              <button className={`recent-record-card ${record.type} ${record.status === "voided" ? "voided" : ""}`} key={record.id} type="button" onClick={() => onOpenHistory(record)}>
                 <div>
                   <strong>{record.type === "deposit" ? "存入" : "取用"} {record.amount}</strong>
                   <span>{record.status === "normal" ? "正常" : "作废"}{record.note || record.voidReason ? ` · ${record.note || record.voidReason}` : ""}</span>
                 </div>
                 <time>{formatLocalMinute(record.recordedAt)}</time>
-              </article>
+              </button>
             ))}
             {!selectedPerson && <p className="empty-inline">选择存票人后显示最近操作。</p>}
             {selectedPerson && !recentRecords.length && <p className="empty-inline">该存票人暂无历史记录。</p>}

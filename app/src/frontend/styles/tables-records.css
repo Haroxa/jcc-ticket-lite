@@ -42,6 +42,19 @@
   font-weight: 700;
   box-shadow: none;
 }
+.table-row.clickable-row {
+  width: 100%;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.table-row.clickable-row:focus-visible,
+.record-card:focus-visible,
+.recent-record-card:focus-visible {
+  outline: 3px solid rgba(18, 128, 116, 0.18);
+  outline-offset: 2px;
+}
 .row-action {
   min-height: 34px;
   padding: 0 10px;
@@ -82,6 +95,11 @@
   margin-top: 12px;
 }
 .record-card {
+  width: 100%;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 10px;
@@ -102,6 +120,11 @@
   gap: 7px;
 }
 .recent-record-card {
+  width: 100%;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;

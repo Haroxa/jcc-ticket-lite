@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getMe, logout, type Account, type Person } from "./api";
+import { getMe, logout, type Account, type Person, type TicketRecord } from "./api";
 import { AppLayout } from "./components/AppLayout/AppLayout";
 import { AccountsPage } from "./pages/AccountsPage";
 import { AuditLogsPage } from "./pages/AuditLogsPage";
@@ -48,6 +48,25 @@ export default function App() {
 
   const pageTitle = useMemo(() => pageMap[page], [page]);
 
+  function openHistoryPerson(person: Person) {
+    setHistoryPerson(person);
+    navigate("history");
+  }
+
+  function openHistoryRecord(record: TicketRecord) {
+    setHistoryPerson({
+      id: record.personId,
+      name: record.personName,
+      alias: "",
+      status: "normal",
+      balance: 0,
+      note: "",
+      createdAt: "",
+      updatedAt: ""
+    });
+    navigate("history");
+  }
+
   function navigate(nextPage: PageKey) {
     if (!account) {
       setPage(nextPage);
@@ -94,10 +113,10 @@ export default function App() {
       onNavigate={navigate}
       onLogout={handleLogout}
     >
-      {page === "dashboard" && <DashboardPage onNavigate={navigate} />}
-      {page === "entry" && <EntryPage account={account} />}
+      {page === "dashboard" && <DashboardPage onNavigate={navigate} onOpenHistory={openHistoryRecord} />}
+      {page === "entry" && <EntryPage account={account} onOpenHistory={openHistoryRecord} />}
       {page === "liveRanking" && <LiveRankingPage account={account} />}
-      {page === "people" && <PeoplePage account={account} onOpenHistory={(person) => { setHistoryPerson(person); navigate("history"); }} />}
+      {page === "people" && <PeoplePage account={account} onOpenHistory={openHistoryPerson} />}
       {page === "records" && <RecordsPage account={account} />}
       {page === "history" && <HistoryPage initialPerson={historyPerson} />}
       {page === "accounts" && <AccountsPage account={account} />}
