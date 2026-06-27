@@ -110,6 +110,14 @@ input, select, textarea {
   border-color: rgba(18, 128, 116, 0.28);
   background: #f6fbfa;
 }
+.person-picker-hint {
+  margin: 2px 2px 0;
+  padding: 6px 4px 0;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
 .balance-preview {
   min-height: 38px;
   display: flex;

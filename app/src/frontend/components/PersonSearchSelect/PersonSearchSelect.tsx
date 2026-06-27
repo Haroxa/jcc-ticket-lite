@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import type { Person } from "../../api";
 
+const visiblePersonLimit = 8;
+
 type PersonSearchSelectProps = {
   people: Person[];
   value: string;
@@ -15,18 +17,19 @@ export function PersonSearchSelect({
   people,
   value,
   selectedId,
-  placeholder = "输入姓名或备注后选择",
-  emptyText = "没有匹配的存票人。",
+  placeholder = "输入姓名搜索，点击下拉结果选择",
+  emptyText = "没有匹配的存票人，请检查名称或状态。",
   onInputChange,
   onSelect
 }: PersonSearchSelectProps) {
   const [open, setOpen] = useState(false);
-  const matchedPeople = useMemo(() => {
+  const filteredPeople = useMemo(() => {
     const keyword = value.trim();
     return people
-      .filter((person) => !keyword || person.name.includes(keyword) || person.note.includes(keyword))
-      .slice(0, 5);
+      .filter((person) => !keyword || person.name.includes(keyword) || person.note.includes(keyword));
   }, [people, value]);
+  const matchedPeople = filteredPeople.slice(0, visiblePersonLimit);
+  const hasMoreMatches = filteredPeople.length > visiblePersonLimit;
 
   function selectPerson(person: Person) {
     onSelect(person);
@@ -62,8 +65,13 @@ export function PersonSearchSelect({
               <span>余额 {person.balance}{person.note ? ` · ${person.note}` : ""}</span>
             </button>
           ))}
-          {!people.length && <p className="empty-inline">暂无可选存票人。</p>}
+          {!people.length && <p className="empty-inline">暂无可选存票人，请先在存票人页面新增。</p>}
           {!!people.length && !matchedPeople.length && <p className="empty-inline">{emptyText}</p>}
+          {!!matchedPeople.length && (
+            <p className="person-picker-hint">
+              {hasMoreMatches ? `仅显示前 ${visiblePersonLimit} 个，继续输入可缩小范围。` : `已显示 ${matchedPeople.length} 个匹配结果。`}
+            </p>
+          )}
         </div>
       )}
     </div>
