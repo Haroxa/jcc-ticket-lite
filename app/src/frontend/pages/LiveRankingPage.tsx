@@ -93,6 +93,7 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
   const entryTotal = sortedEntries.reduce((sum, entry) => sum + entry.score, 0);
   const remaining = remainingSeconds(session);
   const canEditSession = !!session && session.status !== "settled" && session.status !== "cancelled" && canWrite(account);
+  const canControlCountdown = canEditSession && (session.status === "live" || session.status === "countdown");
   const previewScore = positiveInt(giftDiamonds) + positiveInt(ticketUsed) - positiveInt(ticketDeposit);
   const previewBalance = selectedPerson ? selectedPerson.balance - positiveInt(ticketUsed) + positiveInt(ticketDeposit) : 0;
 
@@ -214,7 +215,7 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
     await loadSession(session.id);
   }
 
-  async function runAction(action: "startCountdown" | "freeze" | "end" | "settle" | "cancel") {
+  async function runAction(action: "startCountdown" | "pauseCountdown" | "resumeCountdown" | "resetCountdown" | "freeze" | "end" | "settle" | "cancel") {
     if (!session) return;
     const result = await liveRankAction(session.id, { action, countdownSeconds });
     if (!result.ok) {
@@ -251,10 +252,10 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
             </div>
             <label>秒数<input value={countdownSeconds} onChange={(event) => setCountdownSeconds(Math.max(10, Number(event.target.value || 180)))} inputMode="numeric" /></label>
             <div className="live-rank-control-grid inline">
-              <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("startCountdown")}>开始倒计时</button>
-              <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("freeze")}>立即冻结</button>
-              <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("end")}>结束场次</button>
-              <button className="primary-button" disabled={!canEditSession} type="button" onClick={() => runAction("settle")}>确认结算</button>
+              <button className="secondary-button" disabled={!canControlCountdown || session?.status === "countdown"} type="button" onClick={() => runAction("startCountdown")}>开始</button>
+              <button className="secondary-button" disabled={!canControlCountdown || session?.status !== "countdown"} type="button" onClick={() => runAction("pauseCountdown")}>暂停</button>
+              <button className="secondary-button" disabled={!canControlCountdown || session?.status === "countdown"} type="button" onClick={() => runAction("resumeCountdown")}>继续</button>
+              <button className="secondary-button" disabled={!canControlCountdown} type="button" onClick={() => runAction("resetCountdown")}>重置</button>
             </div>
           </div>
           <div className="live-rank-board-meta">
@@ -291,7 +292,7 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
                 <span data-label="备注">{entry.note || "无备注"}</span>
               </div>
             ))}
-            {!sortedEntries.length && <EmptyState title="暂无排行记录" description="右侧开始场次后，选择存票人并录入礼物钻、取票或存票。" />}
+            {!sortedEntries.length && <EmptyState title="暂无排行记录" description="右侧选择存票人并保存后会进入排行；设为待定或有事会进入待定区，不参与正常排名。" />}
           </div>
         </section>
 
@@ -302,6 +303,16 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
             <label>场次名称<input value={title} onChange={(event) => setTitle(event.target.value)} /></label>
             <label>备注<input value={sessionNote} onChange={(event) => setSessionNote(event.target.value)} placeholder="可选" /></label>
             <button className="primary-button" disabled={!canWrite(account)} type="button" onClick={createSession}>开始新场次</button>
+          </section>
+
+          <section className="panel live-rank-actions-panel">
+            <div className="panel-header compact"><h3>场次操作</h3><span>冻结、结束与结算</span></div>
+            <div className="live-rank-control-grid">
+              <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("freeze")}>立即冻结</button>
+              <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("end")}>结束场次</button>
+              <button className="primary-button" disabled={!canEditSession} type="button" onClick={() => runAction("settle")}>确认结算</button>
+            </div>
+            <p className="muted compact-help">结算前只用于本场排序；确认结算后才会写入正式存取记录。</p>
           </section>
 
           <section className="panel live-rank-editor">
@@ -315,12 +326,12 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
               onSelect={selectPerson}
             />
             <div className="live-rank-form-grid">
-              <label>礼物钻<input value={giftDiamonds} onFocus={() => setActiveNumberField("giftDiamonds")} onChange={(event) => setGiftDiamonds(event.target.value)} inputMode="numeric" placeholder="0" /></label>
-              <label>取票<input value={ticketUsed} onFocus={() => setActiveNumberField("ticketUsed")} onChange={(event) => setTicketUsed(event.target.value)} inputMode="numeric" placeholder="0" /></label>
-              <label>存票<input value={ticketDeposit} onFocus={() => setActiveNumberField("ticketDeposit")} onChange={(event) => setTicketDeposit(event.target.value)} inputMode="numeric" placeholder="0" /></label>
+              <label>礼物钻<input className={activeNumberField === "giftDiamonds" ? "active-number-input" : ""} value={giftDiamonds} onFocus={() => setActiveNumberField("giftDiamonds")} onChange={(event) => setGiftDiamonds(event.target.value)} inputMode="numeric" placeholder="0" /></label>
+              <label>取票<input className={activeNumberField === "ticketUsed" ? "active-number-input" : ""} value={ticketUsed} onFocus={() => setActiveNumberField("ticketUsed")} onChange={(event) => setTicketUsed(event.target.value)} inputMode="numeric" placeholder="0" /></label>
+              <label>存票<input className={activeNumberField === "ticketDeposit" ? "active-number-input" : ""} value={ticketDeposit} onFocus={() => setActiveNumberField("ticketDeposit")} onChange={(event) => setTicketDeposit(event.target.value)} inputMode="numeric" placeholder="0" /></label>
             </div>
             <div className="quick-adjust-row">
-              <span>当前调整：{activeFieldLabel[activeNumberField]}</span>
+              <span>作用于：<strong>{activeFieldLabel[activeNumberField]}</strong></span>
               <button className="secondary-button" type="button" onClick={() => adjustActiveField(-100)}>-100</button>
               <button className="secondary-button" type="button" onClick={() => adjustActiveField(100)}>+100</button>
             </div>

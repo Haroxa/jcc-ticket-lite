@@ -314,15 +314,26 @@ textarea { resize: vertical; }
   grid-template-columns: minmax(0, 1fr) 78px 78px;
   gap: 8px;
   align-items: center;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfc;
 }
 .quick-adjust-row span {
   min-width: 0;
   color: var(--muted);
   font-size: 14px;
 }
+.quick-adjust-row strong {
+  color: var(--accent-strong);
+}
 .quick-adjust-row button {
   min-height: 36px;
   padding: 0 10px;
+}
+.active-number-input {
+  border-color: rgba(18, 128, 116, 0.55);
+  box-shadow: 0 0 0 3px rgba(18, 128, 116, 0.1);
 }
 .segmented.compact .segment {
   min-height: 36px;
@@ -405,6 +416,13 @@ textarea { resize: vertical; }
 }
 .live-rank-control-grid.inline {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.live-rank-actions-panel .live-rank-control-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.compact-help {
+  margin: 8px 0 0;
+  font-size: 13px;
 }
 .live-rank-control-grid button,
 .live-rank-setup button,
@@ -1019,6 +1037,7 @@ input, select, textarea {
   color: var(--text);
 }
 .live-rank-table.compact {
+  height: calc(36px + 7 * 56px);
   max-height: calc(36px + 7 * 56px);
   overflow: auto;
   padding-right: 2px;

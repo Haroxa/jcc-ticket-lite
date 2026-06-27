@@ -244,7 +244,7 @@ export function upsertLiveRankEntry(payload: {
   });
 }
 
-export function liveRankAction(sessionId: string, payload: { action: "startCountdown" | "freeze" | "end" | "settle" | "cancel"; countdownSeconds?: number }) {
+export function liveRankAction(sessionId: string, payload: { action: "startCountdown" | "pauseCountdown" | "resumeCountdown" | "resetCountdown" | "freeze" | "end" | "settle" | "cancel"; countdownSeconds?: number }) {
   return requestJson<{ updated?: boolean; recordCount?: number }>(`/api/live-rank-sessions/${sessionId}/action`, {
     method: "POST",
     body: JSON.stringify(payload)

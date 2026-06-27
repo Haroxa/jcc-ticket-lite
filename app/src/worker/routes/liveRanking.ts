@@ -58,7 +58,7 @@ type UpsertEntryPayload = {
 };
 
 type ActionPayload = {
-  action?: "startCountdown" | "freeze" | "end" | "settle" | "cancel";
+  action?: "startCountdown" | "pauseCountdown" | "resumeCountdown" | "resetCountdown" | "freeze" | "end" | "settle" | "cancel";
   countdownSeconds?: number;
 };
 
@@ -326,6 +326,43 @@ export async function handleLiveRankAction(request: Request, env: Env, sessionId
       WHERE id = ?
     `).bind(seconds, now, endsAt, now, session.id).run();
     await writeAuditLog(env, account, "开始场次倒计时", "live_rank_session", session.id, `${session.title} 开始 ${seconds} 秒倒计时`);
+    return ok({ updated: true });
+  }
+
+  if (payload?.action === "pauseCountdown") {
+    if (session.status !== "countdown" || !session.countdown_ends_at) return fail("当前没有正在运行的倒计时", 409);
+    const remainingSeconds = Math.max(1, Math.floor((new Date(session.countdown_ends_at).getTime() - Date.now()) / 1000));
+    await env.DB.prepare(`
+      UPDATE live_rank_sessions
+      SET status = 'live', countdown_seconds = ?, countdown_started_at = NULL, countdown_ends_at = NULL, updated_at = ?
+      WHERE id = ?
+    `).bind(remainingSeconds, now, session.id).run();
+    await writeAuditLog(env, account, "暂停场次倒计时", "live_rank_session", session.id, `${session.title} 暂停倒计时，剩余 ${remainingSeconds} 秒`);
+    return ok({ updated: true });
+  }
+
+  if (payload?.action === "resumeCountdown") {
+    if (session.status === "settled" || session.status === "cancelled") return fail("已结算或已取消的场次不能继续倒计时", 409);
+    const seconds = Math.min(3600, Math.max(10, Number(session.countdown_seconds || payload.countdownSeconds || 180)));
+    const endsAt = new Date(Date.now() + seconds * 1000).toISOString();
+    await env.DB.prepare(`
+      UPDATE live_rank_sessions
+      SET status = 'countdown', countdown_seconds = ?, countdown_started_at = ?, countdown_ends_at = ?, updated_at = ?
+      WHERE id = ?
+    `).bind(seconds, now, endsAt, now, session.id).run();
+    await writeAuditLog(env, account, "继续场次倒计时", "live_rank_session", session.id, `${session.title} 继续 ${seconds} 秒倒计时`);
+    return ok({ updated: true });
+  }
+
+  if (payload?.action === "resetCountdown") {
+    if (session.status === "settled" || session.status === "cancelled") return fail("已结算或已取消的场次不能重置倒计时", 409);
+    const seconds = Math.min(3600, Math.max(10, Number(payload.countdownSeconds || session.countdown_seconds || 180)));
+    await env.DB.prepare(`
+      UPDATE live_rank_sessions
+      SET status = 'live', countdown_seconds = ?, countdown_started_at = NULL, countdown_ends_at = NULL, updated_at = ?
+      WHERE id = ?
+    `).bind(seconds, now, session.id).run();
+    await writeAuditLog(env, account, "重置场次倒计时", "live_rank_session", session.id, `${session.title} 重置倒计时为 ${seconds} 秒`);
     return ok({ updated: true });
   }
 
