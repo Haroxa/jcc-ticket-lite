@@ -10,6 +10,7 @@ type MorePageProps = {
 
 export function MorePage({ account, onNavigate, onLogout }: MorePageProps) {
   const items: Array<{ title: string; desc: string; page?: PageKey; action?: () => void; visible?: boolean }> = [
+    { title: "存取记录", desc: "查看全部存入、取用和作废流水", page: "records" },
     { title: "个人历史", desc: "按存票人查看完整流水", page: "history" },
     { title: "结算窗口", desc: "记录临时排名并审核结算", page: "liveRanking", visible: canWrite(account) },
     { title: "账号管理", desc: "维护操作员和只读成员", page: "accounts", visible: canAdmin(account) },
