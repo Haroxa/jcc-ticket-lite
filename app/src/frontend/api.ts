@@ -61,6 +61,46 @@ export type TicketRecord = {
   updatedAt: string;
 };
 
+export type LiveRankStatus = "live" | "countdown" | "frozen" | "pending_settlement" | "settled" | "cancelled";
+
+export type LiveRankSession = {
+  id: string;
+  title: string;
+  status: LiveRankStatus;
+  countdownSeconds: number;
+  countdownStartedAt: string;
+  countdownEndsAt: string;
+  startedAt: string;
+  endedAt: string;
+  frozenAt: string;
+  settledAt: string;
+  note: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LiveRankEntry = {
+  id: string;
+  sessionId: string;
+  personId: string;
+  personName: string;
+  personStatus: PersonStatus;
+  currentBalance: number;
+  giftDiamonds: number;
+  ticketUsed: number;
+  ticketDeposit: number;
+  score: number;
+  projectedBalance: number;
+  note: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LiveRankFreeze = {
+  frozenAt: string;
+  entries: unknown;
+} | null;
+
 export type AuditLog = {
   id: string;
   actorAccountId: string | null;
@@ -170,6 +210,42 @@ export function getDashboard() {
     rank: Array<{ id: string; name: string; balance: number }>;
     recent: TicketRecord[];
   }>("/api/dashboard");
+}
+
+export function listLiveRankSessions() {
+  return requestJson<{ items: LiveRankSession[] }>("/api/live-rank-sessions");
+}
+
+export function createLiveRankSession(payload: { title: string; note?: string }) {
+  return requestJson<{ session: LiveRankSession }>("/api/live-rank-sessions", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function getLiveRankSession(sessionId: string) {
+  return requestJson<{ session: LiveRankSession; entries: LiveRankEntry[]; latestFreeze: LiveRankFreeze }>(`/api/live-rank-sessions/${sessionId}`);
+}
+
+export function upsertLiveRankEntry(payload: {
+  sessionId: string;
+  personId: string;
+  giftDiamonds: number;
+  ticketUsed: number;
+  ticketDeposit: number;
+  note?: string;
+}) {
+  return requestJson<{ updated: boolean }>("/api/live-rank-entries", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function liveRankAction(sessionId: string, payload: { action: "startCountdown" | "freeze" | "end" | "settle" | "cancel"; countdownSeconds?: number }) {
+  return requestJson<{ updated?: boolean; recordCount?: number }>(`/api/live-rank-sessions/${sessionId}/action`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
 }
 
 export function listRecords(params: { keyword?: string; personId?: string; type?: string; status?: string; dateFrom?: string; dateTo?: string; page?: number; pageSize?: number }) {

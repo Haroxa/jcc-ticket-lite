@@ -7,6 +7,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { EntryPage } from "./pages/EntryPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { LoginPage } from "./pages/LoginPage";
+import { LiveRankingPage } from "./pages/LiveRankingPage";
 import { MorePage } from "./pages/MorePage";
 import { PeoplePage } from "./pages/PeoplePage";
 import { PublicBoardPage } from "./pages/PublicBoardPage";
@@ -17,6 +18,7 @@ import { canAudit, canWrite } from "./utils/permissions";
 export type PageKey =
   | "dashboard"
   | "entry"
+  | "liveRanking"
   | "people"
   | "records"
   | "history"
@@ -28,6 +30,7 @@ export type PageKey =
 const pageMap: Record<PageKey, string> = {
   dashboard: "工作台",
   entry: "快速录入",
+  liveRanking: "场次排行",
   people: "存票人",
   records: "存取记录",
   history: "个人历史",
@@ -51,6 +54,7 @@ export default function App() {
       return;
     }
     if (nextPage === "entry" && !canWrite(account)) return;
+    if (nextPage === "liveRanking" && !canWrite(account)) return;
     if (nextPage === "accounts" && account.role !== "admin") return;
     if (nextPage === "auditLogs" && !canAudit(account)) return;
     setPage(nextPage);
@@ -92,6 +96,7 @@ export default function App() {
     >
       {page === "dashboard" && <DashboardPage onNavigate={navigate} />}
       {page === "entry" && <EntryPage account={account} />}
+      {page === "liveRanking" && <LiveRankingPage account={account} />}
       {page === "people" && <PeoplePage account={account} onOpenHistory={(person) => { setHistoryPerson(person); navigate("history"); }} />}
       {page === "records" && <RecordsPage account={account} />}
       {page === "history" && <HistoryPage initialPerson={historyPerson} />}

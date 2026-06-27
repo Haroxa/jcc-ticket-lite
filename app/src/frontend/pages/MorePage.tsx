@@ -1,6 +1,6 @@
 import type { Account } from "../api";
 import type { PageKey } from "../App";
-import { canAdmin, canAudit } from "../utils/permissions";
+import { canAdmin, canAudit, canWrite } from "../utils/permissions";
 
 type MorePageProps = {
   account: Account;
@@ -11,6 +11,7 @@ type MorePageProps = {
 export function MorePage({ account, onNavigate, onLogout }: MorePageProps) {
   const items: Array<{ title: string; desc: string; page?: PageKey; action?: () => void; visible?: boolean }> = [
     { title: "个人历史", desc: "按存票人查看完整流水", page: "history" },
+    { title: "场次排行", desc: "直播中计算排名并统一结算", page: "liveRanking", visible: canWrite(account) },
     { title: "账号管理", desc: "维护操作员和只读成员", page: "accounts", visible: canAdmin(account) },
     { title: "操作日志", desc: "查看关键操作轨迹", page: "auditLogs", visible: canAudit(account) },
     { title: "系统信息", desc: "版本、权限和数据策略", page: "settings" },

@@ -4,6 +4,7 @@ import { handlePeople, handlePersonDetail, handlePersonStatus, handlePublicBoard
 import { handleDashboard, handleRecords, handleRestoreRecord, handleVoidRecord } from "./routes/records";
 import { handleAuditLogs } from "./routes/auditLogs";
 import { handleAccountDetail, handleAccountPassword, handleAccounts, handleAccountStatus } from "./routes/accounts";
+import { handleLiveRankAction, handleLiveRankEntry, handleLiveRankSessionDetail, handleLiveRankSessions } from "./routes/liveRanking";
 import type { Env } from "./types";
 import { notFound } from "./utils/response";
 
@@ -53,6 +54,24 @@ export default {
 
     if (url.pathname === "/api/accounts") {
       return handleAccounts(request, env);
+    }
+
+    if (url.pathname === "/api/live-rank-sessions") {
+      return handleLiveRankSessions(request, env);
+    }
+
+    if (url.pathname === "/api/live-rank-entries") {
+      return handleLiveRankEntry(request, env);
+    }
+
+    const liveRankActionMatch = url.pathname.match(/^\/api\/live-rank-sessions\/([^/]+)\/action$/);
+    if (liveRankActionMatch) {
+      return handleLiveRankAction(request, env, liveRankActionMatch[1]);
+    }
+
+    const liveRankDetailMatch = url.pathname.match(/^\/api\/live-rank-sessions\/([^/]+)$/);
+    if (liveRankDetailMatch) {
+      return handleLiveRankSessionDetail(request, env, liveRankDetailMatch[1]);
     }
 
     const voidRecordMatch = url.pathname.match(/^\/api\/records\/([^/]+)\/void$/);

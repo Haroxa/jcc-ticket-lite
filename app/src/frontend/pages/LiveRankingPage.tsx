@@ -1,0 +1,269 @@
+import { useEffect, useMemo, useState } from "react";
+import {
+  createLiveRankSession,
+  getLiveRankSession,
+  listLiveRankSessions,
+  listPeople,
+  liveRankAction,
+  upsertLiveRankEntry,
+  type Account,
+  type LiveRankEntry,
+  type LiveRankSession,
+  type Person
+} from "../api";
+import { EmptyState } from "../components/EmptyState/EmptyState";
+import { PersonSearchSelect } from "../components/PersonSearchSelect/PersonSearchSelect";
+import { formatDateTime } from "../utils/time";
+import { canWrite } from "../utils/permissions";
+
+const statusLabel: Record<LiveRankSession["status"], string> = {
+  live: "进行中",
+  countdown: "倒计时",
+  frozen: "已冻结",
+  pending_settlement: "待结算",
+  settled: "已结算",
+  cancelled: "已取消"
+};
+
+type LiveRankingPageProps = {
+  account: Account;
+};
+
+function currentTitle() {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} 场次排行`;
+}
+
+function positiveInt(value: string) {
+  const next = Number(value || 0);
+  return Number.isInteger(next) && next >= 0 ? next : 0;
+}
+
+function remainingSeconds(session: LiveRankSession | null) {
+  if (!session?.countdownEndsAt || session.status !== "countdown") return 0;
+  return Math.max(0, Math.floor((new Date(session.countdownEndsAt).getTime() - Date.now()) / 1000));
+}
+
+function formatRemaining(seconds: number) {
+  const minute = Math.floor(seconds / 60);
+  const second = seconds % 60;
+  return `${String(minute).padStart(2, "0")}:${String(second).padStart(2, "0")}`;
+}
+
+export function LiveRankingPage({ account }: LiveRankingPageProps) {
+  const [sessions, setSessions] = useState<LiveRankSession[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState("");
+  const [session, setSession] = useState<LiveRankSession | null>(null);
+  const [entries, setEntries] = useState<LiveRankEntry[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
+  const [personId, setPersonId] = useState("");
+  const [personKeyword, setPersonKeyword] = useState("");
+  const [giftDiamonds, setGiftDiamonds] = useState("");
+  const [ticketUsed, setTicketUsed] = useState("");
+  const [ticketDeposit, setTicketDeposit] = useState("");
+  const [note, setNote] = useState("");
+  const [title, setTitle] = useState(currentTitle());
+  const [sessionNote, setSessionNote] = useState("");
+  const [countdownSeconds, setCountdownSeconds] = useState(180);
+  const [notice, setNotice] = useState("");
+  const [tick, setTick] = useState(0);
+
+  const selectedPerson = people.find((person) => person.id === personId);
+  const sortedEntries = useMemo(() => [...entries].sort((a, b) => b.score - a.score || a.updatedAt.localeCompare(b.updatedAt) || a.personName.localeCompare(b.personName)), [entries]);
+  const entryTotal = sortedEntries.reduce((sum, entry) => sum + entry.score, 0);
+  const remaining = remainingSeconds(session);
+  const canEditSession = !!session && session.status !== "settled" && session.status !== "cancelled" && canWrite(account);
+  const previewScore = positiveInt(giftDiamonds) + positiveInt(ticketUsed) - positiveInt(ticketDeposit);
+  const previewBalance = selectedPerson ? selectedPerson.balance - positiveInt(ticketUsed) + positiveInt(ticketDeposit) : 0;
+
+  async function loadSessions(nextActiveId = activeSessionId) {
+    const result = await listLiveRankSessions();
+    if (!result.ok) {
+      setNotice(result.message);
+      return;
+    }
+    setSessions(result.data.items);
+    const nextId = nextActiveId || result.data.items.find((item) => item.status !== "settled" && item.status !== "cancelled")?.id || result.data.items[0]?.id || "";
+    setActiveSessionId(nextId);
+    if (nextId) await loadSession(nextId);
+  }
+
+  async function loadSession(sessionId: string) {
+    const result = await getLiveRankSession(sessionId);
+    if (!result.ok) {
+      setNotice(result.message);
+      return;
+    }
+    setSession(result.data.session);
+    setEntries(result.data.entries);
+    setNotice("");
+  }
+
+  useEffect(() => {
+    void loadSessions();
+    listPeople({ status: "normal", pageSize: 50 }).then((result) => {
+      if (result.ok) setPeople(result.data.items);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!session || session.status !== "countdown") return;
+    const timer = window.setInterval(() => setTick((value) => value + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, [session?.id, session?.status]);
+
+  useEffect(() => {
+    if (tick < 0 || !session || session.status !== "countdown") return;
+    if (remainingSeconds(session) === 0) void runAction("freeze");
+  }, [tick]);
+
+  async function createSession() {
+    if (!title.trim()) {
+      setNotice("请输入场次名称。");
+      return;
+    }
+    const result = await createLiveRankSession({ title: title.trim(), note: sessionNote.trim() });
+    if (!result.ok) {
+      setNotice(result.message);
+      return;
+    }
+    setTitle(currentTitle());
+    setSessionNote("");
+    await loadSessions(result.data.session.id);
+  }
+
+  function selectPerson(person: Person) {
+    setPersonId(person.id);
+    setPersonKeyword(person.name);
+    const existing = entries.find((entry) => entry.personId === person.id);
+    setGiftDiamonds(existing ? String(existing.giftDiamonds) : "");
+    setTicketUsed(existing ? String(existing.ticketUsed) : "");
+    setTicketDeposit(existing ? String(existing.ticketDeposit) : "");
+    setNote(existing?.note || "");
+  }
+
+  async function saveEntry() {
+    if (!session) {
+      setNotice("请先创建或选择场次。");
+      return;
+    }
+    if (!personId) {
+      setNotice("请选择存票人。");
+      return;
+    }
+    if (previewBalance < 0) {
+      setNotice(`结算后余额会变为 ${previewBalance}，请减少取票或增加存票。`);
+      return;
+    }
+    const result = await upsertLiveRankEntry({
+      sessionId: session.id,
+      personId,
+      giftDiamonds: positiveInt(giftDiamonds),
+      ticketUsed: positiveInt(ticketUsed),
+      ticketDeposit: positiveInt(ticketDeposit),
+      note: note.trim()
+    });
+    if (!result.ok) {
+      setNotice(result.message);
+      return;
+    }
+    setNotice("本场排行已保存，结算前不会影响长期余额。");
+    await loadSession(session.id);
+  }
+
+  async function runAction(action: "startCountdown" | "freeze" | "end" | "settle" | "cancel") {
+    if (!session) return;
+    const result = await liveRankAction(session.id, { action, countdownSeconds });
+    if (!result.ok) {
+      setNotice(result.message);
+      return;
+    }
+    if (action === "settle") setNotice(`结算完成，生成 ${result.data.recordCount ?? 0} 条正式流水。`);
+    else setNotice("场次状态已更新。");
+    await loadSessions(session.id);
+  }
+
+  return (
+    <div className="live-rank-layout">
+      <section className="panel live-rank-hero">
+        <div>
+          <h3>{session?.title || "场次排行"}</h3>
+          <p className="muted">礼物钻 + 取票 - 存票 = 本场总票；确认结算前不影响长期余额。</p>
+        </div>
+        <div className="live-rank-metrics">
+          <article><span>状态</span><strong>{session ? statusLabel[session.status] : "未创建"}</strong></article>
+          <article><span>上榜人数</span><strong>{entries.length}</strong></article>
+          <article><span>本场总票</span><strong>{entryTotal}</strong></article>
+          <article><span>倒计时</span><strong>{formatRemaining(remaining)}</strong></article>
+        </div>
+      </section>
+
+      <section className="panel live-rank-create">
+        <label>场次<select value={activeSessionId} onChange={(event) => { setActiveSessionId(event.target.value); void loadSession(event.target.value); }}><option value="">选择场次</option>{sessions.map((item) => <option key={item.id} value={item.id}>{item.title} · {statusLabel[item.status]}</option>)}</select></label>
+        <label>新场次名称<input value={title} onChange={(event) => setTitle(event.target.value)} /></label>
+        <label>备注<input value={sessionNote} onChange={(event) => setSessionNote(event.target.value)} placeholder="可选" /></label>
+        <button className="primary-button" disabled={!canWrite(account)} type="button" onClick={createSession}>创建场次</button>
+      </section>
+
+      {session && (
+        <section className="panel live-rank-actions">
+          <span>开始：{formatDateTime(session.startedAt)}{session.frozenAt ? ` · 冻结：${formatDateTime(session.frozenAt)}` : ""}{session.settledAt ? ` · 结算：${formatDateTime(session.settledAt)}` : ""}</span>
+          <label>倒计时秒数<input value={countdownSeconds} onChange={(event) => setCountdownSeconds(Math.max(10, Number(event.target.value || 180)))} inputMode="numeric" /></label>
+          <div className="button-row">
+            <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("startCountdown")}>开始倒计时</button>
+            <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("freeze")}>立即冻结</button>
+            <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("end")}>结束场次</button>
+            <button className="primary-button" disabled={!canEditSession} type="button" onClick={() => runAction("settle")}>确认结算</button>
+          </div>
+        </section>
+      )}
+
+      <section className="panel live-rank-editor">
+        <div className="panel-header"><h3>录入本场排行</h3><span>保存为草稿，结算后才入账</span></div>
+        <PersonSearchSelect
+          people={people}
+          selectedId={personId}
+          value={personKeyword}
+          emptyText="没有匹配的正常存票人。"
+          onInputChange={(value) => { setPersonKeyword(value); setPersonId(""); }}
+          onSelect={selectPerson}
+        />
+        <div className="live-rank-form-grid">
+          <label>礼物钻<input value={giftDiamonds} onChange={(event) => setGiftDiamonds(event.target.value)} inputMode="numeric" placeholder="0" /></label>
+          <label>取票<input value={ticketUsed} onChange={(event) => setTicketUsed(event.target.value)} inputMode="numeric" placeholder="0" /></label>
+          <label>存票<input value={ticketDeposit} onChange={(event) => setTicketDeposit(event.target.value)} inputMode="numeric" placeholder="0" /></label>
+        </div>
+        <div className={`balance-preview ${previewBalance < 0 ? "danger" : selectedPerson ? "ok" : ""}`}>
+          {selectedPerson ? `本场总票 ${previewScore}，当前余额 ${selectedPerson.balance}，结算后余额 ${previewBalance}。` : "请选择存票人。"}
+        </div>
+        <label>备注<textarea value={note} onChange={(event) => setNote(event.target.value)} rows={2} placeholder="可选" /></label>
+        <div className="button-row">
+          <button className="primary-button" disabled={!canEditSession} type="button" onClick={saveEntry}>保存到本场排行</button>
+        </div>
+        {notice && <p className="notice-text">{notice}</p>}
+      </section>
+
+      <section className="panel">
+        <div className="panel-header"><h3>实时排行</h3><span>按本场总票排序</span></div>
+        <div className="responsive-table live-rank-table">
+          <div className="table-row header"><span>排名</span><span>存票人</span><span>本场总票</span><span>礼物钻</span><span>取票</span><span>存票</span><span>当前余额</span><span>结算后</span><span>备注</span></div>
+          {sortedEntries.map((entry, index) => (
+            <div className="table-row" key={entry.id}>
+              <span className="row-no" data-label="排名">{index + 1}</span>
+              <strong data-label="存票人">{entry.personName}</strong>
+              <span data-label="本场总票">{entry.score}</span>
+              <span data-label="礼物钻">{entry.giftDiamonds}</span>
+              <span data-label="取票">{entry.ticketUsed}</span>
+              <span data-label="存票">{entry.ticketDeposit}</span>
+              <span data-label="当前余额">{entry.currentBalance}</span>
+              <span data-label="结算后">{entry.projectedBalance}</span>
+              <span data-label="备注">{entry.note || "无备注"}</span>
+            </div>
+          ))}
+          {!sortedEntries.length && <EmptyState title="暂无排行记录" description="创建场次后，选择存票人并录入礼物钻、取票或存票。" />}
+        </div>
+      </section>
+    </div>
+  );
+}

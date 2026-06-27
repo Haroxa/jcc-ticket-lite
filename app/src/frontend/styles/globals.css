@@ -238,6 +238,55 @@ textarea { resize: vertical; }
 .entry-layout .calculator-panel {
   grid-column: 1 / -1;
 }
+.live-rank-layout {
+  display: grid;
+  gap: 14px;
+}
+.live-rank-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.8fr);
+  gap: 16px;
+  align-items: center;
+}
+.live-rank-hero h3 {
+  margin: 0 0 6px;
+  font-size: 22px;
+}
+.live-rank-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.live-rank-metrics article {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfc;
+}
+.live-rank-metrics span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.live-rank-metrics strong {
+  font-size: 18px;
+}
+.live-rank-create,
+.live-rank-actions {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.7fr) minmax(180px, 1fr) minmax(160px, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+.live-rank-actions {
+  grid-template-columns: minmax(240px, 1fr) 130px auto;
+}
+.live-rank-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
 label {
   display: grid;
   gap: 6px;
@@ -800,6 +849,10 @@ input, select, textarea {
 .audit-table .table-row {
   grid-template-columns: 52px minmax(150px, 1fr) minmax(100px, 0.8fr) minmax(96px, 0.8fr) minmax(88px, 0.8fr) minmax(220px, 1.6fr) 70px;
 }
+.live-rank-table .table-row {
+  grid-template-columns: 48px minmax(120px, 1fr) 86px 82px 72px 72px 82px 82px minmax(120px, 1fr);
+  gap: 10px;
+}
 .accounts-table .table-row {
   grid-template-columns: 44px minmax(128px, 0.75fr) 72px 64px 146px 146px 226px;
   gap: 10px;
@@ -1163,6 +1216,14 @@ input, select, textarea {
   .two-column { grid-template-columns: 1fr; }
   .entry-layout { grid-template-columns: 1fr; }
   .entry-layout .calculator-panel { grid-column: auto; }
+  .live-rank-hero,
+  .live-rank-create,
+  .live-rank-actions {
+    grid-template-columns: 1fr;
+  }
+  .live-rank-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .calculator-grid { grid-template-columns: 1fr; }
   .filter-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .inline-create,
@@ -1192,6 +1253,10 @@ input, select, textarea {
   .audit-table .table-row {
     min-width: 940px;
     grid-template-columns: 52px minmax(150px, 1fr) minmax(110px, 0.8fr) minmax(96px, 0.8fr) minmax(90px, 0.8fr) minmax(240px, 1.6fr) 70px;
+  }
+  .live-rank-table .table-row {
+    min-width: 900px;
+    grid-template-columns: 48px minmax(120px, 1fr) 86px 82px 72px 72px 82px 82px minmax(120px, 1fr);
   }
   .accounts-table .table-row {
     min-width: 920px;
@@ -1296,6 +1361,7 @@ input, select, textarea {
   .people-table .table-row,
   .records-table .table-row,
   .audit-table .table-row,
+  .live-rank-table .table-row,
   .accounts-table .table-row {
     display: grid;
     grid-template-columns: 1fr auto;
