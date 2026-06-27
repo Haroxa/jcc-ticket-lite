@@ -410,24 +410,28 @@
   .people-table .table-row,
   .people-table .table-row.header {
     display: grid;
-    grid-template-columns: 48px minmax(120px, 1fr) 82px 82px minmax(140px, 1.15fr) 206px;
-    gap: 10px;
+    grid-template-columns: 38px 96px 56px 58px 92px 156px;
+    gap: 8px;
     align-items: center;
-    min-width: 720px;
+    width: 620px;
+    min-width: 620px;
     min-height: 48px;
-    padding: 8px 10px;
+    padding: 8px;
     border-left-width: 1px;
+    box-sizing: border-box;
   }
   .records-table .table-row,
   .records-table .table-row.header {
     display: grid;
-    grid-template-columns: 52px minmax(150px, 1.2fr) minmax(120px, 1fr) minmax(70px, 0.7fr) minmax(70px, 0.7fr) minmax(70px, 0.7fr) minmax(86px, auto);
-    gap: 10px;
+    grid-template-columns: 42px 122px 96px 54px 58px 58px 104px;
+    gap: 8px;
     align-items: center;
-    min-width: 820px;
+    width: 680px;
+    min-width: 680px;
     min-height: 48px;
-    padding: 8px 10px;
+    padding: 8px;
     border-left-width: 1px;
+    box-sizing: border-box;
   }
   .people-table .table-row.header,
   .records-table .table-row.header {
@@ -447,14 +451,15 @@
     display: flex;
     grid-template-columns: none;
     justify-content: flex-end;
-    gap: 6px;
-    width: 206px;
+    gap: 4px;
+    width: 156px;
   }
   .people-table .row-actions .row-action,
   .records-table .row-action {
     width: auto;
     min-height: 32px;
-    padding: 0 8px;
+    padding: 0 5px;
+    font-size: 14px;
   }
   .public-shell {
     padding: 24px 14px 32px;
