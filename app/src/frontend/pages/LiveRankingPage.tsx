@@ -191,12 +191,7 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
           <h3>{session?.title || "场次排行"}</h3>
           <p className="muted">礼物钻 + 取票 - 存票 = 本场总票；确认结算前不影响长期余额。</p>
         </div>
-        <div className="live-rank-metrics">
-          <article><span>状态</span><strong>{session ? statusLabel[session.status] : "未创建"}</strong></article>
-          <article><span>上榜人数</span><strong>{entries.length}</strong></article>
-          <article><span>本场总票</span><strong>{entryTotal}</strong></article>
-          <article><span>倒计时</span><strong>{formatRemaining(remaining)}</strong></article>
-        </div>
+        <span className="live-rank-hero-status">{session ? statusLabel[session.status] : "未开始"}</span>
       </section>
 
       <div className="live-rank-workbench">
@@ -206,9 +201,18 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
               <h3>实时排行</h3>
               <p>按本场总票排序，截图展示时优先截取此区域。</p>
             </div>
+          </div>
+          <div className="live-rank-countdown-bar">
             <div className={`countdown-card ${session?.status === "countdown" ? "active" : ""}`}>
               <span>{session?.status === "countdown" ? "定榜倒计时" : "倒计时"}</span>
               <strong>{formatRemaining(remaining)}</strong>
+            </div>
+            <label>秒数<input value={countdownSeconds} onChange={(event) => setCountdownSeconds(Math.max(10, Number(event.target.value || 180)))} inputMode="numeric" /></label>
+            <div className="live-rank-control-grid inline">
+              <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("startCountdown")}>开始倒计时</button>
+              <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("freeze")}>立即冻结</button>
+              <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("end")}>结束场次</button>
+              <button className="primary-button" disabled={!canEditSession} type="button" onClick={() => runAction("settle")}>确认结算</button>
             </div>
           </div>
           <div className="live-rank-board-meta">
@@ -243,19 +247,6 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
             <label>备注<input value={sessionNote} onChange={(event) => setSessionNote(event.target.value)} placeholder="可选" /></label>
             <button className="primary-button" disabled={!canWrite(account)} type="button" onClick={createSession}>开始新场次</button>
           </section>
-
-          {session && (
-            <section className="panel live-rank-control">
-              <div className="panel-header compact"><h3>定榜控制</h3><span>{formatDateTime(session.startedAt)}</span></div>
-              <label>倒计时秒数<input value={countdownSeconds} onChange={(event) => setCountdownSeconds(Math.max(10, Number(event.target.value || 180)))} inputMode="numeric" /></label>
-              <div className="live-rank-control-grid">
-                <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("startCountdown")}>开始倒计时</button>
-                <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("freeze")}>立即冻结</button>
-                <button className="secondary-button" disabled={!canEditSession} type="button" onClick={() => runAction("end")}>结束场次</button>
-                <button className="primary-button" disabled={!canEditSession} type="button" onClick={() => runAction("settle")}>确认结算</button>
-              </div>
-            </section>
-          )}
 
           <section className="panel live-rank-editor">
             <div className="panel-header compact"><h3>录入排行</h3><span>草稿</span></div>
