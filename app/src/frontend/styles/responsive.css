@@ -138,7 +138,7 @@
     grid-template-columns: 1fr;
   }
   .window-picker-menu {
-    max-height: 236px;
+    max-height: 198px;
   }
   .live-rank-board-list {
     height: 304px;
@@ -161,21 +161,29 @@
   .live-rank-control-grid.inline {
     grid-template-columns: 1fr;
   }
-  .live-rank-history-row {
-    grid-template-columns: 44px minmax(0, 1fr);
-    gap: 4px 10px;
-    align-items: start;
+  .window-picker-menu button {
+    grid-template-columns: minmax(0, 1fr) 54px 106px;
+    gap: 6px;
   }
-  .live-rank-history-row strong {
-    grid-column: 2;
-    grid-row: 1;
+  .window-filter-panel {
+    grid-template-columns: 1fr;
   }
-  .live-rank-history-row span:not(.history-index) {
-    grid-column: 2;
+  .window-management-table .table-row {
+    min-width: 760px;
+    grid-template-columns: 52px minmax(180px, 1.35fr) 96px minmax(150px, 1fr) minmax(150px, 1fr) 86px;
   }
-  .live-rank-history-row .history-index {
-    grid-column: 1;
-    grid-row: 1 / span 4;
+  .window-management-table .table-row.header {
+    display: grid;
+  }
+  .window-management-table .table-row > span,
+  .window-management-table .table-row > strong,
+  .window-management-table .table-row > .row-action {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .responsive-table.window-management-table {
+    overflow-x: auto;
+    padding-bottom: 8px;
   }
   .filter-panel { grid-template-columns: 1fr; }
   .account-toolbar {

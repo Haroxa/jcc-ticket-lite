@@ -12,6 +12,8 @@ import {
   type LiveRankEntryStatus,
   type Person
 } from "../api";
+import { EmptyState } from "../components/EmptyState/EmptyState";
+import { Pagination } from "../components/Pagination/Pagination";
 import { PersonSearchSelect } from "../components/PersonSearchSelect/PersonSearchSelect";
 import { formatDateTime } from "../utils/time";
 import { canWrite } from "../utils/permissions";
@@ -94,12 +96,29 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
   const [showSettlementReview, setShowSettlementReview] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [sessionPickerOpen, setSessionPickerOpen] = useState(false);
+  const [windowKeyword, setWindowKeyword] = useState("");
+  const [windowStatus, setWindowStatus] = useState("");
+  const [windowPage, setWindowPage] = useState(1);
+  const [windowPageSize, setWindowPageSize] = useState(10);
 
   const selectedPerson = people.find((person) => person.id === personId);
   const sortedEntries = useMemo(() => [...entries].sort((a, b) => b.score - a.score || a.updatedAt.localeCompare(b.updatedAt) || a.personName.localeCompare(b.personName)), [entries]);
   const normalEntries = useMemo(() => sortedEntries.filter((entry) => entry.rankStatus === "normal"), [sortedEntries]);
   const pendingEntries = useMemo(() => sortedEntries.filter((entry) => entry.rankStatus !== "normal"), [sortedEntries]);
-  const recentSessions = useMemo(() => sessions.slice(0, 10), [sessions]);
+  const pickerSessions = useMemo(() => sessions.slice(0, 10), [sessions]);
+  const filteredWindowSessions = useMemo(() => {
+    const keyword = windowKeyword.trim().toLowerCase();
+    return sessions.filter((item) => {
+      const matchedKeyword = !keyword || `${item.title} ${item.note}`.toLowerCase().includes(keyword);
+      const matchedStatus = !windowStatus || item.status === windowStatus;
+      return matchedKeyword && matchedStatus;
+    });
+  }, [sessions, windowKeyword, windowStatus]);
+  const windowTotalPages = Math.max(1, Math.ceil(filteredWindowSessions.length / windowPageSize));
+  const windowPageItems = useMemo(() => {
+    const safePage = Math.min(Math.max(1, windowPage), windowTotalPages);
+    return filteredWindowSessions.slice((safePage - 1) * windowPageSize, safePage * windowPageSize);
+  }, [filteredWindowSessions, windowPage, windowPageSize, windowTotalPages]);
   const settlementReviewRows = useMemo(() => {
     const rows: SettlementReviewRow[] = [];
     sortedEntries.forEach((entry) => {
@@ -185,6 +204,16 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
   useEffect(() => {
     if (countdownStatus === "idle") setCountdownLeft(countdownSeconds);
   }, [countdownSeconds, countdownStatus]);
+
+  useEffect(() => {
+    if (windowPage > windowTotalPages) setWindowPage(windowTotalPages);
+  }, [windowPage, windowTotalPages]);
+
+  function selectSession(sessionId: string) {
+    setActiveSessionId(sessionId);
+    setSessionPickerOpen(false);
+    void loadSession(sessionId);
+  }
 
   async function createSession() {
     if (!title.trim()) {
@@ -316,6 +345,12 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
     await runAction("clearEntries");
   }
 
+  function resetWindowFilters() {
+    setWindowKeyword("");
+    setWindowStatus("");
+    setWindowPage(1);
+  }
+
   return (
     <div className="live-rank-layout">
       <section className="panel live-rank-hero compact">
@@ -333,27 +368,23 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
             <div className="window-picker">
               <span className="field-label">窗口</span>
               <button className="window-picker-button" type="button" onClick={() => setSessionPickerOpen((value) => !value)}>
-                <span>{session?.title || "选择历史窗口"}</span>
-                <small>{session ? statusLabel[session.status] : "最近 10 个"}</small>
+                <span>{session ? `${session.title} · ${statusLabel[session.status]}` : "选择最近窗口"}</span>
               </button>
               {sessionPickerOpen && (
                 <div className="window-picker-menu">
-                  {recentSessions.map((item) => (
+                  {pickerSessions.map((item) => (
                     <button
                       className={item.id === activeSessionId ? "active" : ""}
                       key={item.id}
                       type="button"
-                      onClick={() => {
-                        setActiveSessionId(item.id);
-                        setSessionPickerOpen(false);
-                        void loadSession(item.id);
-                      }}
+                      onClick={() => selectSession(item.id)}
                     >
-                      <strong>{item.title}</strong>
-                      <span>{statusLabel[item.status]} · {formatDateTime(item.createdAt)}</span>
+                      <span>{item.title}</span>
+                      <small>{statusLabel[item.status]}</small>
+                      <time>{formatDateTime(item.createdAt)}</time>
                     </button>
                   ))}
-                  {!recentSessions.length && <div className="window-picker-empty">暂无历史窗口</div>}
+                  {!pickerSessions.length && <div className="window-picker-empty">暂无历史窗口</div>}
                 </div>
               )}
             </div>
@@ -454,31 +485,43 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
         </aside>
       </div>
 
-      <section className="panel live-rank-history">
+      <section className="panel live-rank-management">
         <div className="panel-header compact">
-          <h3>窗口历史</h3>
-          <span>最近 10 个，更多旧窗口暂不展示</span>
+          <h3>窗口管理</h3>
+          <span>筛选历史窗口并切换查看</span>
         </div>
-        <div className="live-rank-history-list">
-          {recentSessions.map((item, index) => (
-            <button
-              className={`live-rank-history-row ${item.id === activeSessionId ? "active" : ""}`}
-              key={item.id}
-              type="button"
-              onClick={() => {
-                setActiveSessionId(item.id);
-                void loadSession(item.id);
-              }}
-            >
-              <span className="history-index">#{index + 1}</span>
+        <div className="filter-panel window-filter-panel">
+          <label>关键词<input value={windowKeyword} onChange={(event) => { setWindowKeyword(event.target.value); setWindowPage(1); }} placeholder="搜索窗口名称或备注" /></label>
+          <label>状态<select value={windowStatus} onChange={(event) => { setWindowStatus(event.target.value); setWindowPage(1); }}><option value="">全部状态</option><option value="live">记录中</option><option value="pending_settlement">待结算</option><option value="settled">已结算</option><option value="cancelled">已取消</option></select></label>
+          <div className="filter-actions">
+            <button className="primary-button" type="button" onClick={() => setWindowPage(1)}>查询</button>
+            <button className="secondary-button" type="button" onClick={resetWindowFilters}>重置</button>
+          </div>
+        </div>
+        <p className="filter-summary">当前显示：{windowStatus ? statusLabel[windowStatus as LiveRankSession["status"]] : "全部状态"}，共 {filteredWindowSessions.length} 个窗口。</p>
+        <div className="responsive-table window-management-table">
+          <div className="table-row header"><span>序号</span><span>窗口名称</span><span>状态</span><span>创建时间</span><span>结算时间</span><span>操作</span></div>
+          {windowPageItems.map((item, index) => (
+            <div className={`table-row ${item.id === activeSessionId ? "selected" : ""}`} key={item.id}>
+              <span className="row-no">{(windowPage - 1) * windowPageSize + index + 1}</span>
               <strong>{item.title}</strong>
-              <span>{statusLabel[item.status]}</span>
-              <span>创建 {formatDateTime(item.createdAt)}</span>
-              <span>{item.settledAt ? `结算 ${formatDateTime(item.settledAt)}` : "未结算"}</span>
-            </button>
+              <span><span className="status-pill">{statusLabel[item.status]}</span></span>
+              <span>{formatDateTime(item.createdAt)}</span>
+              <span>{item.settledAt ? formatDateTime(item.settledAt) : "未结算"}</span>
+              <button className="secondary-button row-action" type="button" onClick={() => selectSession(item.id)}>{item.id === activeSessionId ? "当前" : "选择"}</button>
+            </div>
           ))}
-          {!recentSessions.length && <div className="live-rank-history-empty">暂无窗口历史，新建窗口后会显示在这里。</div>}
+          {!windowPageItems.length && <EmptyState title="暂无窗口" description="当前筛选条件下没有窗口，可重置筛选后查看。" />}
         </div>
+        <Pagination
+          page={windowPage}
+          totalPages={windowTotalPages}
+          total={filteredWindowSessions.length}
+          pageSize={windowPageSize}
+          totalLabel="个窗口"
+          onPageChange={setWindowPage}
+          onPageSizeChange={(nextPageSize) => { setWindowPageSize(nextPageSize); setWindowPage(1); }}
+        />
       </section>
       {showSettlementReview && (
         <div className="modal-backdrop" role="presentation">
