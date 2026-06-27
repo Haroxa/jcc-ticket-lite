@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   createLiveRankSession,
   getLiveRankSession,
@@ -100,6 +100,7 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
   const [windowStatus, setWindowStatus] = useState("");
   const [windowPage, setWindowPage] = useState(1);
   const [windowPageSize, setWindowPageSize] = useState(10);
+  const sessionPickerRef = useRef<HTMLDivElement | null>(null);
 
   const selectedPerson = people.find((person) => person.id === personId);
   const sortedEntries = useMemo(() => [...entries].sort((a, b) => b.score - a.score || a.updatedAt.localeCompare(b.updatedAt) || a.personName.localeCompare(b.personName)), [entries]);
@@ -208,6 +209,24 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
   useEffect(() => {
     if (windowPage > windowTotalPages) setWindowPage(windowTotalPages);
   }, [windowPage, windowTotalPages]);
+
+  useEffect(() => {
+    if (!sessionPickerOpen) return;
+    function handlePointerDown(event: PointerEvent) {
+      if (!sessionPickerRef.current?.contains(event.target as Node)) {
+        setSessionPickerOpen(false);
+      }
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setSessionPickerOpen(false);
+    }
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [sessionPickerOpen]);
 
   function selectSession(sessionId: string) {
     setActiveSessionId(sessionId);
@@ -365,7 +384,7 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
         <div className="live-rank-command-main">
           <div className="panel-header compact"><h3>当前窗口</h3><span>选择历史窗口或新建窗口</span></div>
           <div className="live-rank-setup-row">
-            <div className="window-picker">
+            <div className="window-picker" ref={sessionPickerRef}>
               <span className="field-label">窗口</span>
               <button className="window-picker-button" type="button" onClick={() => setSessionPickerOpen((value) => !value)}>
                 <span>{session ? `${session.title} · ${statusLabel[session.status]}` : "选择最近窗口"}</span>

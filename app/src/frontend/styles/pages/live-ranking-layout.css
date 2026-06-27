@@ -73,9 +73,13 @@
   cursor: pointer;
 }
 .window-picker-button::after {
-  content: "⌄";
-  color: var(--muted);
-  text-align: center;
+  content: "";
+  justify-self: center;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  transform: translateY(-2px) rotate(45deg);
 }
 .window-picker-button span {
   min-width: 0;
@@ -97,18 +101,11 @@
   border-radius: 8px;
   background: #fff;
   box-shadow: 0 12px 26px rgba(24, 35, 32, 0.13);
-  scrollbar-width: thin;
-  scrollbar-color: #9fb0ac transparent;
+  scrollbar-width: none;
 }
 .window-picker-menu::-webkit-scrollbar {
-  width: 6px;
-}
-.window-picker-menu::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: #9fb0ac;
-}
-.window-picker-menu::-webkit-scrollbar-track {
-  background: transparent;
+  width: 0;
+  height: 0;
 }
 .window-picker-menu button {
   display: grid;
