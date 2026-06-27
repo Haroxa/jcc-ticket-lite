@@ -55,7 +55,7 @@ export function PeoplePage({ account, onOpenHistory }: PeoplePageProps) {
     await loadPeople(1, { keyword: "", status: "" });
   }
 
-  async function submitCreate(payload: { name: string; note: string }) {
+  async function submitCreate(payload: { name: string; displayPriority: number; note: string }) {
     if (!canAdmin(account)) {
       setNotice("只有管理员可以新增存票人。");
       return;
@@ -69,9 +69,9 @@ export function PeoplePage({ account, onOpenHistory }: PeoplePageProps) {
     await loadPeople(1);
   }
 
-  async function submitEdit(person: Person, payload: { name: string; note: string }) {
+  async function submitEdit(person: Person, payload: { name: string; displayPriority: number; note: string }) {
     if (!canAdmin(account)) return;
-    const result = await updatePerson(person.id, { name: payload.name, alias: person.alias, note: payload.note });
+    const result = await updatePerson(person.id, { name: payload.name, alias: person.alias, displayPriority: payload.displayPriority, note: payload.note });
     if (!result.ok) {
       setNotice(result.message);
       return;
@@ -109,12 +109,13 @@ export function PeoplePage({ account, onOpenHistory }: PeoplePageProps) {
       {notice && <p className="notice-text">{notice}</p>}
 
       <div className="responsive-table people-table">
-        <div className="table-row header"><span>序号</span><span>存票人</span><span>余额</span><span>状态</span><span>备注</span><span>操作</span></div>
+        <div className="table-row header"><span>序号</span><span>存票人</span><span>余额</span><span>优先级</span><span>状态</span><span>备注</span><span>操作</span></div>
         {data.items.map((person, index) => (
           <div className={`table-row person-status-${person.status}`} key={person.id}>
             <span className="row-no" data-label="序号">{(page - 1) * pageSize + index + 1}</span>
             <strong data-label="存票人">{person.name}</strong>
             <span data-label="余额">{person.balance}</span>
+            <span data-label="优先级">{person.displayPriority}</span>
             <span data-label="状态"><span className="status-pill">{statusLabel[person.status]}</span></span>
             <span data-label="备注">{person.note || "无备注"}</span>
             {canAdmin(account) ? (
@@ -151,9 +152,10 @@ export function PeoplePage({ account, onOpenHistory }: PeoplePageProps) {
 
 function PersonCreateModal({ onCancel, onSubmit }: {
   onCancel: () => void;
-  onSubmit: (payload: { name: string; note: string }) => void;
+  onSubmit: (payload: { name: string; displayPriority: number; note: string }) => void;
 }) {
   const [name, setName] = useState("");
+  const [displayPriority, setDisplayPriority] = useState("1");
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
 
@@ -162,7 +164,12 @@ function PersonCreateModal({ onCancel, onSubmit }: {
       setError("请输入存票人名称。");
       return;
     }
-    onSubmit({ name: name.trim(), note: note.trim() });
+    const priority = Number(displayPriority);
+    if (!Number.isInteger(priority) || priority < 1 || priority > 20) {
+      setError("展示优先级必须是 1-20 的整数。");
+      return;
+    }
+    onSubmit({ name: name.trim(), displayPriority: priority, note: note.trim() });
   }
 
   return (
@@ -171,6 +178,8 @@ function PersonCreateModal({ onCancel, onSubmit }: {
         <h3 id="personCreateTitle">新增存票人</h3>
         <p className="muted">新增后默认正常状态，可参与快速录入和内部统计。</p>
         <label>存票人名称<input autoComplete="off" value={name} onChange={(event) => setName(event.target.value)} placeholder="输入名称" /></label>
+        <label>展示优先级<input autoComplete="off" value={displayPriority} onChange={(event) => setDisplayPriority(event.target.value)} inputMode="numeric" placeholder="1-20，数字越大越靠前" /></label>
+        <p className="field-hint">范围 1-20，默认 1；数字越大，在列表和搜索下拉中越靠前。</p>
         <label>备注<input autoComplete="off" value={note} onChange={(event) => setNote(event.target.value)} placeholder="可选" /></label>
         {error && <p className="notice-text">{error}</p>}
         <div className="button-row modal-actions">
@@ -185,9 +194,10 @@ function PersonCreateModal({ onCancel, onSubmit }: {
 function PersonEditModal({ person, onCancel, onSubmit }: {
   person: Person;
   onCancel: () => void;
-  onSubmit: (person: Person, payload: { name: string; note: string }) => void;
+  onSubmit: (person: Person, payload: { name: string; displayPriority: number; note: string }) => void;
 }) {
   const [name, setName] = useState(person.name);
+  const [displayPriority, setDisplayPriority] = useState(String(person.displayPriority || 1));
   const [note, setNote] = useState(person.note || "");
   const [error, setError] = useState("");
 
@@ -196,15 +206,22 @@ function PersonEditModal({ person, onCancel, onSubmit }: {
       setError("请输入存票人名称。");
       return;
     }
-    onSubmit(person, { name: name.trim(), note: note.trim() });
+    const priority = Number(displayPriority);
+    if (!Number.isInteger(priority) || priority < 1 || priority > 20) {
+      setError("展示优先级必须是 1-20 的整数。");
+      return;
+    }
+    onSubmit(person, { name: name.trim(), displayPriority: priority, note: note.trim() });
   }
 
   return (
     <div className="modal-backdrop" role="presentation">
       <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="personEditTitle">
         <h3 id="personEditTitle">编辑存票人</h3>
-        <p className="muted">仅修改名称和备注，不影响历史流水。</p>
+        <p className="muted">仅修改名称、展示优先级和备注，不影响历史流水。</p>
         <label>存票人名称<input autoComplete="off" value={name} onChange={(event) => setName(event.target.value)} /></label>
+        <label>展示优先级<input autoComplete="off" value={displayPriority} onChange={(event) => setDisplayPriority(event.target.value)} inputMode="numeric" /></label>
+        <p className="field-hint">范围 1-20，数字越大越靠前；同票榜单也会优先展示。</p>
         <label>备注<input autoComplete="off" value={note} onChange={(event) => setNote(event.target.value)} placeholder="可选" /></label>
         {error && <p className="notice-text">{error}</p>}
         <div className="button-row modal-actions">

@@ -60,6 +60,7 @@ export default function App() {
       alias: "",
       status: "normal",
       balance: 0,
+      displayPriority: 1,
       note: "",
       createdAt: "",
       updatedAt: ""

@@ -13,6 +13,7 @@ type PersonRow = {
   alias: string | null;
   status: PersonStatus;
   cached_balance: number;
+  display_priority: number;
   note: string | null;
   created_at: string;
   updated_at: string;
@@ -21,6 +22,7 @@ type PersonRow = {
 type CreatePersonPayload = {
   name?: string;
   alias?: string;
+  displayPriority?: number;
   note?: string;
 };
 
@@ -32,6 +34,7 @@ type StatusPayload = {
 type UpdatePersonPayload = {
   name?: string;
   alias?: string;
+  displayPriority?: number;
   note?: string;
 };
 
@@ -44,10 +47,17 @@ function mapPerson(row: PersonRow) {
     alias: row.alias || "",
     status: row.status,
     balance: row.cached_balance,
+    displayPriority: row.display_priority,
     note: row.note || "",
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
+}
+
+function normalizeDisplayPriority(value: unknown) {
+  const priority = Number(value ?? 1);
+  if (!Number.isInteger(priority) || priority < 1 || priority > 20) return 1;
+  return priority;
 }
 
 async function requireAccount(request: Request, env: Env) {
@@ -97,11 +107,12 @@ async function listPeople(request: Request, env: Env) {
   const total = totalRow?.total || 0;
   const offset = (page - 1) * pageSize;
   const result = await env.DB.prepare(`
-    SELECT id, name, alias, status, cached_balance, note, created_at, updated_at
+    SELECT id, name, alias, status, cached_balance, display_priority, note, created_at, updated_at
     FROM ticket_people
     ${whereSql}
     ORDER BY
       CASE status WHEN 'normal' THEN 1 WHEN 'disabled' THEN 2 ELSE 3 END,
+      display_priority DESC,
       name ASC
     LIMIT ? OFFSET ?
   `).bind(...bindings, pageSize, offset).all<PersonRow>();
@@ -119,19 +130,20 @@ async function createPerson(request: Request, env: Env, account: SessionAccount)
   const payload = await readJson<CreatePersonPayload>(request);
   const name = payload?.name?.trim();
   if (!name) return fail("存票人名称不能为空");
+  const displayPriority = normalizeDisplayPriority(payload?.displayPriority);
   const now = new Date().toISOString();
   const id = randomId("person");
 
   try {
     await env.DB.prepare(`
-      INSERT INTO ticket_people (id, name, alias, status, cached_balance, note, created_at, updated_at)
-      VALUES (?, ?, ?, 'normal', 0, ?, ?, ?)
-    `).bind(id, name, payload?.alias?.trim() || null, payload?.note?.trim() || null, now, now).run();
+      INSERT INTO ticket_people (id, name, alias, status, cached_balance, display_priority, note, created_at, updated_at)
+      VALUES (?, ?, ?, 'normal', 0, ?, ?, ?, ?)
+    `).bind(id, name, payload?.alias?.trim() || null, displayPriority, payload?.note?.trim() || null, now, now).run();
   } catch {
     return fail("存票人名称可能已存在，请检查后再保存", 409);
   }
 
-  const afterData = { id, name, alias: payload?.alias || "", status: "normal", balance: 0, note: payload?.note || "" };
+  const afterData = { id, name, alias: payload?.alias || "", status: "normal", balance: 0, displayPriority, note: payload?.note || "" };
   await writeAuditLog(env, account, "新增存票人", "person", id, `新增存票人 ${name}`, undefined, afterData);
   return ok({ person: afterData });
 }
@@ -148,7 +160,7 @@ export async function handlePersonStatus(request: Request, env: Env, personId: s
   if (!reason) return fail("修改状态必须填写原因");
 
   const current = await env.DB.prepare(`
-    SELECT id, name, alias, status, cached_balance, note, created_at, updated_at
+    SELECT id, name, alias, status, cached_balance, display_priority, note, created_at, updated_at
     FROM ticket_people
     WHERE id = ?
     LIMIT 1
@@ -186,9 +198,10 @@ export async function handlePersonDetail(request: Request, env: Env, personId: s
   const payload = await readJson<UpdatePersonPayload>(request);
   const name = payload?.name?.trim();
   if (!name) return fail("存票人名称不能为空");
+  const displayPriority = normalizeDisplayPriority(payload?.displayPriority);
 
   const current = await env.DB.prepare(`
-    SELECT id, name, alias, status, cached_balance, note, created_at, updated_at
+    SELECT id, name, alias, status, cached_balance, display_priority, note, created_at, updated_at
     FROM ticket_people
     WHERE id = ?
     LIMIT 1
@@ -199,9 +212,9 @@ export async function handlePersonDetail(request: Request, env: Env, personId: s
   try {
     await env.DB.prepare(`
       UPDATE ticket_people
-      SET name = ?, alias = ?, note = ?, updated_at = ?
+      SET name = ?, alias = ?, display_priority = ?, note = ?, updated_at = ?
       WHERE id = ?
-    `).bind(name, payload?.alias?.trim() || null, payload?.note?.trim() || null, now, personId).run();
+    `).bind(name, payload?.alias?.trim() || null, displayPriority, payload?.note?.trim() || null, now, personId).run();
   } catch {
     return fail("存票人名称可能已存在，请检查后再保存", 409);
   }
@@ -210,6 +223,7 @@ export async function handlePersonDetail(request: Request, env: Env, personId: s
     ...current,
     name,
     alias: payload?.alias?.trim() || null,
+    display_priority: displayPriority,
     note: payload?.note?.trim() || null,
     updated_at: now
   };
@@ -219,13 +233,13 @@ export async function handlePersonDetail(request: Request, env: Env, personId: s
 
 export async function handlePublicBoard(env: Env) {
   const result = await env.DB.prepare(`
-    SELECT id, name, cached_balance
+    SELECT id, name, cached_balance, display_priority
     FROM ticket_people
     WHERE status = 'normal'
       AND cached_balance > 0
-    ORDER BY cached_balance DESC, name ASC
+    ORDER BY cached_balance DESC, display_priority DESC, name ASC
     LIMIT 100
-  `).all<{ id: string; name: string; cached_balance: number }>();
+  `).all<{ id: string; name: string; cached_balance: number; display_priority: number }>();
 
   return ok({
     items: result.results.map((person, index) => ({

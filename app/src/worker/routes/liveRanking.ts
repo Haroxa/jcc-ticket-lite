@@ -33,6 +33,7 @@ type EntryRow = {
   person_name: string;
   person_status: "normal" | "disabled" | "blocked";
   current_balance: number;
+  display_priority: number;
   gift_diamonds: number;
   ticket_used: number;
   ticket_deposit: number;
@@ -100,6 +101,7 @@ function mapEntry(row: EntryRow) {
     personName: row.person_name,
     personStatus: row.person_status,
     currentBalance: row.current_balance,
+    displayPriority: row.display_priority,
     giftDiamonds: row.gift_diamonds,
     ticketUsed: row.ticket_used,
     ticketDeposit: row.ticket_deposit,
@@ -137,14 +139,15 @@ async function listSessionEntries(env: Env, sessionId: string) {
       live_rank_entries.*,
       ticket_people.name AS person_name,
       ticket_people.status AS person_status,
-      ticket_people.cached_balance AS current_balance
+      ticket_people.cached_balance AS current_balance,
+      ticket_people.display_priority AS display_priority
     FROM live_rank_entries
     JOIN ticket_people ON ticket_people.id = live_rank_entries.person_id
     WHERE live_rank_entries.session_id = ?
     ORDER BY
       CASE live_rank_entries.rank_status WHEN 'normal' THEN 1 WHEN 'pending' THEN 2 ELSE 3 END,
       (live_rank_entries.gift_diamonds + live_rank_entries.ticket_used - live_rank_entries.ticket_deposit) DESC,
-      live_rank_entries.updated_at ASC,
+      ticket_people.display_priority DESC,
       ticket_people.name ASC
   `).bind(sessionId).all<EntryRow>();
   return result.results.map(mapEntry);

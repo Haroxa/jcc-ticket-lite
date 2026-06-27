@@ -24,6 +24,7 @@ export type Person = {
   alias: string;
   status: PersonStatus;
   balance: number;
+  displayPriority: number;
   note: string;
   createdAt: string;
   updatedAt: string;
@@ -87,6 +88,7 @@ export type LiveRankEntry = {
   personName: string;
   personStatus: PersonStatus;
   currentBalance: number;
+  displayPriority: number;
   giftDiamonds: number;
   ticketUsed: number;
   ticketDeposit: number;
@@ -178,14 +180,14 @@ export function listPeople(params: { keyword?: string; status?: string; page?: n
   return requestJson<PageData<Person>>(`/api/people?${search.toString()}`);
 }
 
-export function createPerson(payload: { name: string; alias?: string; note?: string }) {
+export function createPerson(payload: { name: string; alias?: string; displayPriority?: number; note?: string }) {
   return requestJson<{ person: Person }>("/api/people", {
     method: "POST",
     body: JSON.stringify(payload)
   });
 }
 
-export function updatePerson(personId: string, payload: { name: string; alias?: string; note?: string }) {
+export function updatePerson(personId: string, payload: { name: string; alias?: string; displayPriority?: number; note?: string }) {
   return requestJson<{ person: Person }>(`/api/people/${personId}`, {
     method: "PATCH",
     body: JSON.stringify(payload)

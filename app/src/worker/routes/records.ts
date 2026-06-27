@@ -364,7 +364,7 @@ export async function handleDashboard(request: Request, env: Env) {
     SELECT id, name, cached_balance AS balance
     FROM ticket_people
     WHERE status = 'normal' AND cached_balance > 0
-    ORDER BY cached_balance DESC, name ASC
+    ORDER BY cached_balance DESC, display_priority DESC, name ASC
     LIMIT 10
   `).all<{ id: string; name: string; balance: number }>();
   const recent = await env.DB.prepare(`

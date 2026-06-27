@@ -103,7 +103,7 @@ export function LiveRankingPage({ account }: LiveRankingPageProps) {
   const sessionPickerRef = useRef<HTMLDivElement | null>(null);
 
   const selectedPerson = people.find((person) => person.id === personId);
-  const sortedEntries = useMemo(() => [...entries].sort((a, b) => b.score - a.score || a.updatedAt.localeCompare(b.updatedAt) || a.personName.localeCompare(b.personName)), [entries]);
+  const sortedEntries = useMemo(() => [...entries].sort((a, b) => b.score - a.score || b.displayPriority - a.displayPriority || a.personName.localeCompare(b.personName)), [entries]);
   const normalEntries = useMemo(() => sortedEntries.filter((entry) => entry.rankStatus === "normal"), [sortedEntries]);
   const pendingEntries = useMemo(() => sortedEntries.filter((entry) => entry.rankStatus !== "normal"), [sortedEntries]);
   const pickerSessions = useMemo(() => sessions.slice(0, 10), [sessions]);
