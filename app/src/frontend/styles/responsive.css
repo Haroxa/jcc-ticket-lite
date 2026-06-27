@@ -400,6 +400,62 @@
   .people-table .row-actions .row-action {
     min-height: 36px;
   }
+  .responsive-table.people-table,
+  .responsive-table.records-table {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 8px;
+    scrollbar-gutter: stable;
+  }
+  .people-table .table-row,
+  .people-table .table-row.header {
+    display: grid;
+    grid-template-columns: 48px minmax(120px, 1fr) 82px 82px minmax(140px, 1.15fr) 206px;
+    gap: 10px;
+    align-items: center;
+    min-width: 720px;
+    min-height: 48px;
+    padding: 8px 10px;
+    border-left-width: 1px;
+  }
+  .records-table .table-row,
+  .records-table .table-row.header {
+    display: grid;
+    grid-template-columns: 52px minmax(150px, 1.2fr) minmax(120px, 1fr) minmax(70px, 0.7fr) minmax(70px, 0.7fr) minmax(70px, 0.7fr) minmax(86px, auto);
+    gap: 10px;
+    align-items: center;
+    min-width: 820px;
+    min-height: 48px;
+    padding: 8px 10px;
+    border-left-width: 1px;
+  }
+  .people-table .table-row.header,
+  .records-table .table-row.header {
+    display: grid;
+    min-height: 40px;
+  }
+  .people-table .table-row > span,
+  .people-table .table-row > strong,
+  .people-table .table-row > .row-actions,
+  .records-table .table-row > span,
+  .records-table .table-row > strong,
+  .records-table .table-row > .row-action {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .people-table .row-actions {
+    display: flex;
+    grid-template-columns: none;
+    justify-content: flex-end;
+    gap: 6px;
+    width: 206px;
+  }
+  .people-table .row-actions .row-action,
+  .records-table .row-action {
+    width: auto;
+    min-height: 32px;
+    padding: 0 8px;
+  }
   .public-shell {
     padding: 24px 14px 32px;
   }
