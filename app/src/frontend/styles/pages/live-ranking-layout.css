@@ -1,0 +1,221 @@
+.entry-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(260px, 0.45fr);
+  gap: 14px;
+  align-items: start;
+}
+.entry-layout .calculator-panel {
+  grid-column: 1 / -1;
+}
+.live-rank-layout {
+  display: grid;
+  gap: 14px;
+}
+.live-rank-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 14px;
+  align-items: start;
+}
+.live-rank-side {
+  display: grid;
+  gap: 12px;
+}
+.live-rank-command {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.45fr);
+  gap: 16px;
+  align-items: end;
+}
+.live-rank-command-main,
+.live-rank-command-actions {
+  display: grid;
+  gap: 10px;
+}
+.live-rank-setup-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, 0.8fr) minmax(160px, 0.7fr) 132px;
+  gap: 10px;
+  align-items: end;
+}
+.live-rank-setup-row label {
+  margin: 0;
+}
+.live-rank-setup-row button {
+  width: 100%;
+  min-height: 42px;
+}
+.live-rank-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.8fr);
+  gap: 16px;
+  align-items: center;
+}
+.live-rank-hero h3 {
+  margin: 0 0 6px;
+  font-size: 22px;
+}
+.live-rank-hero.compact {
+  padding: 14px 16px;
+}
+.live-rank-hero-status {
+  justify-self: end;
+  align-self: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  color: var(--accent-strong);
+  background: var(--surface-soft);
+  font-weight: 800;
+}
+.live-rank-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.live-rank-metrics article {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfc;
+}
+.live-rank-metrics span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.live-rank-metrics strong {
+  font-size: 18px;
+}
+.live-rank-create,
+.live-rank-actions {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.7fr) minmax(180px, 1fr) minmax(160px, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+.live-rank-actions {
+  grid-template-columns: minmax(240px, 1fr) 130px auto;
+}
+.live-rank-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.quick-adjust-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 78px 78px;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfc;
+}
+.quick-adjust-row span {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.quick-adjust-row strong {
+  color: var(--accent-strong);
+}
+.quick-adjust-row button {
+  min-height: 36px;
+  padding: 0 10px;
+}
+.active-number-input {
+  border-color: rgba(18, 128, 116, 0.55);
+  box-shadow: 0 0 0 3px rgba(18, 128, 116, 0.1);
+}
+.segmented.compact .segment {
+  min-height: 36px;
+  padding: 0 10px;
+}
+.live-rank-board {
+  display: grid;
+  gap: 10px;
+}
+.live-rank-board-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.live-rank-board-top h3,
+.live-rank-board-top p {
+  margin: 0;
+}
+.live-rank-board-top p {
+  margin-top: 4px;
+  color: var(--muted);
+}
+.countdown-card {
+  min-width: 142px;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfc;
+}
+.countdown-card.active {
+  border-color: rgba(18, 128, 116, 0.35);
+  background: #edf8f6;
+}
+.countdown-card span {
+  color: var(--muted);
+  font-size: 13px;
+}
+.countdown-card strong {
+  font-size: 32px;
+  line-height: 1.05;
+  color: var(--accent-strong);
+  font-variant-numeric: tabular-nums;
+}
+.live-rank-countdown-bar {
+  display: grid;
+  grid-template-columns: 150px 92px minmax(0, 1fr);
+  gap: 10px;
+  align-items: end;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfc;
+}
+.live-rank-countdown-bar label {
+  margin: 0;
+}
+.live-rank-countdown-bar input {
+  min-height: 38px;
+}
+.live-rank-board-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.live-rank-board-meta span {
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  font-size: 13px;
+}
+.live-rank-control-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.live-rank-control-grid.inline {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.live-rank-command-actions .live-rank-control-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.live-rank-control-grid button,
+.live-rank-setup button,
+.live-rank-editor > button {
+  width: 100%;
+}
+

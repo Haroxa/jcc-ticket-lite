@@ -1,0 +1,109 @@
+.public-shell {
+  width: min(1100px, 100%);
+  margin: 0 auto;
+  display: grid;
+  align-content: start;
+  gap: 24px;
+  padding: 52px 24px 64px;
+  min-height: 100vh;
+}
+.public-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  padding: 0;
+}
+.public-hero h1, .public-hero p { margin: 0; }
+.public-hero h1 {
+  font-size: 36px;
+  line-height: 1.15;
+}
+.public-hero p {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 16px;
+}
+.public-summary {
+  min-width: 118px;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.public-summary strong {
+  font-size: 34px;
+  line-height: 1;
+  color: var(--accent-strong);
+}
+.dev-only-button { margin-top: 12px; }
+.public-board {
+  display: grid;
+  gap: 22px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.public-board-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.public-board-head h2,
+.public-board-head p {
+  margin: 0;
+}
+.public-board-head h2 {
+  font-size: 24px;
+  line-height: 1.2;
+}
+.public-board-head p,
+.public-board-head span {
+  color: var(--muted);
+  font-size: 15px;
+}
+.public-rank-list {
+  display: grid;
+  gap: 10px;
+}
+.public-rank-item {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) minmax(92px, auto);
+  gap: 20px;
+  align-items: center;
+  min-height: 62px;
+  padding: 12px 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfc;
+}
+.public-rank-no {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  color: var(--accent-strong);
+  background: var(--surface-soft);
+  font-weight: 800;
+}
+.public-rank-person { display: grid; gap: 3px; }
+.public-rank-person strong {
+  font-size: 18px;
+}
+.public-rank-person span { color: var(--muted); }
+.public-rank-item b {
+  text-align: right;
+  color: var(--accent-strong);
+  font-size: 25px;
+  line-height: 1;
+}
+
+
